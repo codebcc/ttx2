@@ -96,6 +96,11 @@ TT2Line.prototype.blocksForPaintAreaId = function(id){
 
 //represents the page
 function TT2Page(){
+	this.defaults = {
+		color_bg: TT2COLOR.BLACK,
+		color_fg: TT2COLOR.WHITE
+	};
+	
 	this.lines = new Array(TT2CONSTANTS.LINES);
 }
 
@@ -108,6 +113,4 @@ function TT2PaintArea(){
 	this.startCol = 0;
 	this.startRow = 0;
 }
-
-
 
