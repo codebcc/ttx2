@@ -3,6 +3,13 @@
  * @created 2011/09/24
  */
 
+//some constants which might prove useful
+TT2CONSTANTS = {
+	COLUMNS: 30,
+	LINES: 	 14	
+}
+
+//color info model
 TT2COLOR = {
 	
     RED:{
@@ -60,6 +67,17 @@ function TT2Block(){
  */
 TT2Block.prototype.belongsTo = function(paintAreaId){
 	return this.paintArea == paintAreaId;
+}
+
+//represents one line
+function TT2Line(){
+	this.blocks = new Array(TT2CONSTANTS.COLUMNS);
+}
+
+
+//represents the page
+function TT2Page(){
+	this.lines = new Array(TT2CONSTANTS.LINES);
 }
 
 
