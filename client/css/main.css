@@ -1,0 +1,53 @@
+body {
+    position: relative;
+}
+#canvas {
+	background: #000;
+    overflow: hidden;
+}
+
+#canvas, #canvaswrapper {
+    cursor: none;
+	float: left;
+	height: 322px;
+    position: relative;
+	width: 480px;
+    z-index: 50;
+}
+
+#canvaswrapper {
+    left: 0;
+    position: absolute;
+    top: 0;
+}
+
+#cursor {
+    background: #ccc;
+    display: block;
+    float: left;
+    height: 14px;
+    left: 0;
+    position: absolute;
+    top: 0;
+    width: 12px;
+    z-index: 100;
+}
+
+#tools {
+	float: left;
+    margin: 0 0 0 10px;
+	width: 100px;	
+}
+
+#tools a {
+	background: url(../img/sprite-colors.png);
+	display: block;
+	height: 13px;
+	text-indent: -9999px;
+	width: 13px;
+}
+
+#tools div {
+    padding-bottom: 10px;
+}
+

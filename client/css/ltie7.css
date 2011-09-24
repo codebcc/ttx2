@@ -1,0 +1,5 @@
+#header ul#nav li a {
+    background: none;
+    filter: progid:DXImageTransform.Microsoft.AlphaImageLoader(src='images/t-latest-news-trans.png', sizingMethod='crop');
+    filter: alpha(opacity=50);
+}
