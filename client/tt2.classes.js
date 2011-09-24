@@ -5,7 +5,7 @@
 
 //some constants which might prove useful
 TT2CONSTANTS = {
-	COLUMNS: 30,
+	COLUMNS: 40,
 	LINES: 	 14	
 }
 
@@ -58,7 +58,10 @@ function TT2Block(){
 	
 	//if this has a value we are part of an paint area
 	//this should store some id for the paint area so we can kill/modify it later
-	this.paintArea = null;
+	this.paintAreaId = null;
+	
+	//boolean map if a sub block is filled or not
+	this.subMap = new Array();
 }
 
 /**
@@ -95,4 +98,16 @@ TT2Line.prototype.blocksForPaintAreaId = function(id){
 function TT2Page(){
 	this.lines = new Array(TT2CONSTANTS.LINES);
 }
+
+//represents a paint area
+function TT2PaintArea(){
+	
+	this.width = 0;
+	this.height = 0;
+	
+	this.startCol = 0;
+	this.startRow = 0;
+}
+
+
 
