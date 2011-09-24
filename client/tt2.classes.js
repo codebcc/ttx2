@@ -74,10 +74,25 @@ function TT2Line(){
 	this.blocks = new Array(TT2CONSTANTS.COLUMNS);
 }
 
+/**
+ * retrieves all blocks belonging to a given paint area id
+ * @return array of blocks of this line belonging to the given paint area id
+ */
+TT2Line.prototype.blocksForPaintAreaId = function(id){
+	
+	paintAreaBlocks = new Array();
+	
+	for (key in this.blocks){
+	  if( this.blocks[key].belongsTo(id) ){
+	  	paintAreaBlocks.push(this.blocks[key]);
+	  }
+	}
+	
+	return paintAreaBlocks;
+}
 
 //represents the page
 function TT2Page(){
 	this.lines = new Array(TT2CONSTANTS.LINES);
 }
-
 
