@@ -6,24 +6,27 @@ body {
 #canvas {
   background: #000;
   overflow: hidden; }
+@media -sass-debug-info{filename{font-family:file\:\/\/\/home\/the-cliff\/Dropbox\/web\/teletext2\/client\/css\/main\.scss}line{font-family:\0000326}}
+  #canvas div.row {
+    float: left;
+    position: relative;
+    width: 100%; }
 
-@media -sass-debug-info{filename{font-family:file\:\/\/\/home\/the-cliff\/Dropbox\/web\/teletext2\/client\/css\/main\.scss}line{font-family:\0000328}}
-#canvas, #canvaswrapper {
+@media -sass-debug-info{filename{font-family:file\:\/\/\/home\/the-cliff\/Dropbox\/web\/teletext2\/client\/css\/main\.scss}line{font-family:\0000333}}
+.container {
   cursor: none;
   float: left;
-  height: 322px;
   position: relative;
-  width: 480px;
   z-index: 50; }
 
-@media -sass-debug-info{filename{font-family:file\:\/\/\/home\/the-cliff\/Dropbox\/web\/teletext2\/client\/css\/main\.scss}line{font-family:\0000337}}
+@media -sass-debug-info{filename{font-family:file\:\/\/\/home\/the-cliff\/Dropbox\/web\/teletext2\/client\/css\/main\.scss}line{font-family:\0000342}}
 #canvaswrapper {
   left: 0;
   position: absolute;
   top: 0; }
 
-@media -sass-debug-info{filename{font-family:file\:\/\/\/home\/the-cliff\/Dropbox\/web\/teletext2\/client\/css\/main\.scss}line{font-family:\0000343}}
-#cursor, #stickycursor {
+@media -sass-debug-info{filename{font-family:file\:\/\/\/home\/the-cliff\/Dropbox\/web\/teletext2\/client\/css\/main\.scss}line{font-family:\0000348}}
+.cursor {
   background: #ccc;
   display: block;
   float: left;
@@ -34,13 +37,13 @@ body {
   width: 12px;
   z-index: 100; }
 
-@media -sass-debug-info{filename{font-family:file\:\/\/\/home\/the-cliff\/Dropbox\/web\/teletext2\/client\/css\/main\.scss}line{font-family:\0000355}}
+@media -sass-debug-info{filename{font-family:file\:\/\/\/home\/the-cliff\/Dropbox\/web\/teletext2\/client\/css\/main\.scss}line{font-family:\0000360}}
 #tools {
   float: left;
   margin: 0 0 0 10px;
   width: 100px; }
 
-@media -sass-debug-info{filename{font-family:file\:\/\/\/home\/the-cliff\/Dropbox\/web\/teletext2\/client\/css\/main\.scss}line{font-family:\0000361}}
+@media -sass-debug-info{filename{font-family:file\:\/\/\/home\/the-cliff\/Dropbox\/web\/teletext2\/client\/css\/main\.scss}line{font-family:\0000366}}
 #tools a {
   background: url(../img/sprite-colors.png);
   display: block;
@@ -48,11 +51,11 @@ body {
   text-indent: -9999px;
   width: 13px; }
 
-@media -sass-debug-info{filename{font-family:file\:\/\/\/home\/the-cliff\/Dropbox\/web\/teletext2\/client\/css\/main\.scss}line{font-family:\0000369}}
+@media -sass-debug-info{filename{font-family:file\:\/\/\/home\/the-cliff\/Dropbox\/web\/teletext2\/client\/css\/main\.scss}line{font-family:\0000374}}
 #tools div {
   padding-bottom: 10px; }
 
-@media -sass-debug-info{filename{font-family:file\:\/\/\/home\/the-cliff\/Dropbox\/web\/teletext2\/client\/css\/main\.scss}line{font-family:\0000373}}
+@media -sass-debug-info{filename{font-family:file\:\/\/\/home\/the-cliff\/Dropbox\/web\/teletext2\/client\/css\/main\.scss}line{font-family:\0000378}}
 .control {
   color: #fff;
   background: #00007f;
@@ -62,10 +65,10 @@ body {
   position: absolute;
   width: 12px;
   z-index: 200; }
-@media -sass-debug-info{filename{font-family:file\:\/\/\/home\/the-cliff\/Dropbox\/web\/teletext2\/client\/css\/main\.scss}line{font-family:\0000382}}
+@media -sass-debug-info{filename{font-family:file\:\/\/\/home\/the-cliff\/Dropbox\/web\/teletext2\/client\/css\/main\.scss}line{font-family:\0000387}}
   .control.graphics {
     border-right: 2px solid #fff;
     width: 10px; }
-@media -sass-debug-info{filename{font-family:file\:\/\/\/home\/the-cliff\/Dropbox\/web\/teletext2\/client\/css\/main\.scss}line{font-family:\0000386}}
+@media -sass-debug-info{filename{font-family:file\:\/\/\/home\/the-cliff\/Dropbox\/web\/teletext2\/client\/css\/main\.scss}line{font-family:\0000391}}
   .control.background {
     background-image: url(../img/mesh.png); }

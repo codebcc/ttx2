@@ -23,14 +23,19 @@ body {
 #canvas {
 	background: #000;
     overflow: hidden;
+    div.row {
+        float: left;
+        position: relative;
+        width: 100%;
+    }
 }
 
-#canvas, #canvaswrapper {
+.container {
     cursor: none;
 	float: left;
-	height: $fh;
+	//height: $fh;
     position: relative;
-	width: $fw;
+	//width: $fw;
     z-index: 50;
 }
 
@@ -40,7 +45,7 @@ body {
     top: 0;
 }
 
-#cursor, #stickycursor {
+.cursor {
     background: #ccc;
     display: block;
     float: left;

@@ -1,4 +1,4 @@
-var a = lastX =  lastY = 0;
+var lastX =  lastY = 0;
 var stickycursor = tools = canvas = cursor = cavaswrapper = $();
 var gridX = new Array();
 var gridY = new Array();
@@ -20,23 +20,25 @@ $(document).ready(function () {
     //build grid
     CANVAS.grid.buildGrid();
 
-    //Add cursor
-    CANVAS.cursorInit();
-    
     //Setup shortcut keys
-    CANVAS.keys();
+    CANVAS.keys.init();
+
+    //Add cursor
+    CURSOR.cursorInit();
 });
 
 var TOOLS = {
     build: function() {
+        var a = 0;
         //make the phisical buttons
+        //OMG this is dirty but buttons will change ASAP
         tools.find("div").each(function(j) {		
             for(i in PALETTE) {
                 $(this).append('<a href="#" class="' + PALETTE[i].name + '" id="' + $(this).attr("id") + '-' + PALETTE[i].name + '" title="' + $(this).attr("title") + " " + PALETTE[i].name + '" style="background-position: left ' + (0-a) + 'px"></a>');
-                a=a+13;
+                a=a+13; //13 = pixelheight of sprites
             };
-            a=a+(j*8);
-            a = a - ((j==1) ? 9 : 0);
+            a=a+(j*8); //8 = amount of tools in a group
+            a = a - ((j==1) ? 9 : 0); //correct sprite positions
         });
 
         //click action
@@ -50,60 +52,123 @@ var TOOLS = {
 var CANVAS = {
     grid: {
         buildGrid: function() {
+            $(".container").css({
+                height: canvasHeight,
+                width: canvasWidth
+            });
+            $(".cursor").css({
+                height: blockY,
+                width: blockX
+            });
+            //build our array of grid pixel positions
             for(a=0; a<=canvas.width(); a+=blockX) {
+                //x-axis
                 gridX.push(a);
             }
+            var rowCount=0;
             for(a=0; a<=canvas.height(); a+=blockY) {
+                //y-axis
                 gridY.push(a);
+                //add horizontal divs
+                canvas.append('<div class="row y' + a + '" id="row' + rowCount + '" style="height:' + blockY + 'px">');
+                rowCount++;
             }
+            $("div.row").click(function() {
+                stickycursor.remove();
+                a = cursor.clone();
+                $(this).append(a.attr("id", "stickycursor"));
+                stickycursor = $("#stickycursor");
+            });
+
         },
         snap: function(o) {
             o.x = (Math.round(o.x/blockX)*blockX);
             o.y = (Math.round(o.y/blockY)*blockY);
             cursor.css('left', o.x).css('top', o.y);
+        },
+        node: {
+            get: {
+                //get a nodes position on the grid
+                top: function(elem) {
+                    return parseInt(elem.css("top"))
+                },
+                left: function(elem) {
+                    return parseInt(elem.css("left"))
+                },
+                row: function(elem) {
+                    return elem.parents("div.row").attr("id");
+                }
+            },
+            move: {
+                //move a node in a particular direction
+                right: function(elem) {
+                    if(CANVAS.grid.node.at.right(elem)) return false;
+                    elem.css("left", (CANVAS.grid.node.get.left(elem) + blockX));
+                }
+            },
+            at: {
+                //is a node at the edge of the screen?
+                right: function(elem) {
+                    if((CANVAS.grid.node.get.left(elem)+blockX)==canvasWidth) return true;
+                }
+            }
         }
     },
-    keys: function() {
-		$(document).keydown(function(event) {
-			//u: 38, d: 40, l: 37, r: 39
-			if($("body.canvas").length>0) {
-				event.preventDefault();
-				ct = parseInt(cursor.css("top"));
-				cl = parseInt(cursor.css("left"));
-				if(event.which==38) {
-					//up
-					if(ct >= blockY) cursor.css("top", (ct-blockY) + "px");
-				} else if(event.which==40) {
-					//down
-					if(ct<(canvasHeight-blockY)) cursor.css("top", (ct+blockY) + "px");
-				} else if(event.which==37) {
-					//left
-					if(cl>=blockX) cursor.css("left", (cl-blockX) + "px");
-				} else if(event.which==39) {
-					//right
-					if(cl<(canvasWidth-blockX)) cursor.css("left",(cl+blockX) + "px");
-				}
-			}
-		});	
+    keys: {
+        init: function() {
+            $(document).keydown(function(event) {
+                if($("body.canvas").length>0) CANVAS.keys[event]();
+            });
+        },
+        38: function() {
+            //up
+            CANVAS.node.move.up(cursor);
+        },
+        40: function() {
+            //down
+            CANVAS.node.move.down(cursor);
+        },
+        37: function() {
+            //left
+            CANVAS.node.move.left(cursor);
+        },
+        39: function() {
+            //right
+            CANVAS.node.move.right(cursor);
+        }
     },
     addCC: function(o) {
         if(stickycursor.length<1) return false; //no sticky cursor - get outta here!
 
+        //if we're at the right hand side, also get outta here!
+        if(CANVAS.grid.node.at.right(o.elem)) return false;
+
         //remove any control character at this position
         $('.control[style*="' + stickycursor.attr("style") + '"]').remove();
 
-        palette = PALETTE[o.elem.attr("class")];
-        id = o.elem.parent().attr("id");
-        cls = "control " + o.elem.attr("class");
+        palette = PALETTE[o.elem.attr("class")]; //this is our colour
+        id = o.elem.parent().attr("id"); //this is the description of our tool
+        cls = "control cursor " + o.elem.attr("class"); //this is the color
         cls += (id=="backgroundcolor") ? " background" : " foreground";
         cls += (id.indexOf("graphics")>-1) ? " graphics" : ""; 
         style = stickycursor.attr("style");
         ctrl = $("<span>").attr({class: cls, style: stickycursor.attr("style")}).text(palette.sname);
-        canvas.append(ctrl);
+        ctrlWrapper = $("<div>");
+        stickycursor.parents("div.row").append(ctrl);
+        CANVAS.grid.node.move.right(stickycursor);
         return false;
+    }
+}
+
+var CURSOR = {
+    x: function() {
+        return parseInt(cursor.css("left"));
+    },
+    y: function() {
+        return parseInt(cursor.css("top"));
     },
     cursorInit: function() {
-        canvas.append('<div id="cursor">');
+        canvas.append('<div id="cursor" class="cursor">');
         cursor = $("#cursor");
         
 		canvaswrapper.hover(function(){
@@ -112,18 +177,15 @@ var CANVAS = {
                 CANVAS.grid.snap({x: e.clientX, y: e.clientY});
 			}).click(function() {
                 stickycursor.remove();
-                a = cursor.clone();
-                canvas.append(a.attr("id", "stickycursor"));
+                a = cursor.clone().attr("id","stickycursor").css("top","0");
+                $('div.row.y' + CURSOR.y()).append(a);
                 stickycursor = $("#stickycursor");
-
-                stickycursor.draggable({ revert: true, grid: [blockX,blockY], cursorAt: { left: 5 } });
             });
 		}, 
 		function() {
 			$("body").removeClass("canvas");
 			$(this).unbind("mousemove");	
 		});
-	
     }
 }
 
