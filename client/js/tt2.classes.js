@@ -14,35 +14,59 @@ TT2COLOR = {
 	
     RED:{
     	name: "Red",
-    	rgb: [255,  47,  21]
+    	rgb: [255,  47,  21],
+		hex: "f00",
+        sname: "R",
+        contrast: "ccc"
     },
     YELLOW: {
     	name: "Yellow",
-    	rgb: [255, 253,  51]
+    	rgb: [255, 253,  51],
+		hex: "ff0",
+        sname: "Y",
+        contrast: "666"
     },
     BLUE: {
     	name: "Blue",
-    	rgb: [  0,  39, 252]
+    	rgb: [  0,  39, 252],
+		hex: "00f",
+        sname: "BL",
+        contrast: "ccc"
     },
     MAGENTA: {
     	name: "Magenta",
-    	rgb: [255,  63, 253]
+    	rgb: [255,  63, 253],
+		hex: "f0f",
+        sname: "M",
+        contrast: "666"
     },
     GREEN: {
     	name: "Green",
-    	rgb: [  0, 250,  44]
+    	rgb: [  0, 250,  44],
+		hex: "0f0",
+        sname: "G",
+        contrast: "666"
     },
     CYAN: {
     	name: "Cyan",
-    	rgb: [  0, 252, 255]
+    	rgb: [  0, 252, 255],
+		hex: "0f0",
+        sname: "C",
+        contrast: "666"
     },
     BLACK: {
     	name: "Black",
-    	rgb: [  0,   0,   0]
+    	rgb: [  0,   0,   0],
+		hex: "000",
+        sname: 'BK',
+        contrast: "ccc"
     },
     WHITE: {
     	name: "White",
-    	rgb: [255, 255, 255] 
+    	rgb: [255, 255, 255],
+		hex: "fff",
+        sname: "W",
+        contrast: "666"
     }
 }
 

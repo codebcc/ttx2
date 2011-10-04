@@ -33,8 +33,8 @@ var TOOLS = {
         //make the phisical buttons
         //OMG this is dirty but buttons will change ASAP
         tools.find("div").each(function(j) {		
-            for(i in PALETTE) {
-                $(this).append('<a href="#" class="' + PALETTE[i].name + '" id="' + $(this).attr("id") + '-' + PALETTE[i].name + '" title="' + $(this).attr("title") + " " + PALETTE[i].name + '" style="background-position: left ' + (0-a) + 'px"></a>');
+            for(i in TT2COLOR) {
+                $(this).append('<a href="#" class="' + TT2COLOR[i].name + '" id="' + $(this).attr("id") + '-' + TT2COLOR[i].name + '" title="' + $(this).attr("title") + " " + TT2COLOR[i].name + '" style="background-position: left ' + (0-a) + 'px"></a>');
                 a=a+13; //13 = pixelheight of sprites
             };
             a=a+(j*8); //8 = amount of tools in a group
@@ -146,7 +146,7 @@ var CANVAS = {
         //remove any control character at this position
         $('.control[style*="' + stickycursor.attr("style") + '"]').remove();
 
-        palette = PALETTE[o.elem.attr("class")]; //this is our colour
+        palette = TT2COLOR[o.elem.attr("class").toUpperCase()]; //this is our colour
         id = o.elem.parent().attr("id"); //this is the description of our tool
         cls = "control cursor " + o.elem.attr("class"); //this is the color
         cls += (id=="backgroundcolor") ? " background" : " foreground";
@@ -189,58 +189,7 @@ var CURSOR = {
     }
 }
 
-var PALETTE = {
-	black: {
-		name: "black",
-		color: "000",
-        sname: 'BK',
-        contrast: "ccc"
-	},
-	red: {
-		name: "red",
-		color: "f00",
-        sname: "R",
-        contrast: "ccc"
-	},
-	green: {
-		name: "green",
-		color: "0f0",
-        sname: "G",
-        contrast: "666"
-    },
-	yellow: {
-		name: "yellow",
-		color: "ff0",
-        sname: "Y",
-        contrast: "666"
-	},
-	blue: {
-		name: "blue",
-		color: "00f",
-        sname: "BL",
-        contrast: "ccc"
-	},	
-	magenta: {
-		name: "magenta",
-		color: "f0f",
-        sname: "M",
-        contrast: "666"
-	},	
-	cyan: {
-		name: "cyan",
-		color: "0f0",
-        sname: "C",
-        contrast: "666"
-	},	
-	white: {
-		name: "white",
-		color: "fff",
-        sname: "W",
-        contrast: "666"
-	}
-};
-
 Array.min = function( array ){
-        return Math.min.apply( Math, array );
+    return Math.min.apply( Math, array );
 };
 
