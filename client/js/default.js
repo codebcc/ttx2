@@ -1,191 +1,226 @@
-var lastX =  lastY = 0;
-var stickycursor = tools = canvas = cursor = cavaswrapper = $();
-var gridX = new Array();
-var gridY = new Array();
-var canvasInit = true;
-var blockX = 12;
-var blockY = 14;
-var canvasWidth = 480;
-var canvasHeight = 322;
-
 $(document).ready(function () {
-
-    tools = $("#tools");
-    canvas = $("#canvas");
-    canvaswrapper = $("#canvaswrapper");
-
-    //Build tools
-    TOOLS.build();
-
-    //build grid
-    CANVAS.grid.buildGrid();
-
-    //Setup shortcut keys
-    CANVAS.keys.init();
-
-    //Add cursor
-    CURSOR.cursorInit();
-});
-
-var TOOLS = {
-    build: function() {
-        var a = 0;
-        //make the phisical buttons
-        //OMG this is dirty but buttons will change ASAP
-        tools.find("div").each(function(j) {		
-            for(i in TT2COLOR) {
-                $(this).append('<a href="#" class="' + TT2COLOR[i].name + '" id="' + $(this).attr("id") + '-' + TT2COLOR[i].name + '" title="' + $(this).attr("title") + " " + TT2COLOR[i].name + '" style="background-position: left ' + (0-a) + 'px"></a>');
-                a=a+13; //13 = pixelheight of sprites
-            };
-            a=a+(j*8); //8 = amount of tools in a group
-            a = a - ((j==1) ? 9 : 0); //correct sprite positions
-        });
-
-        //click action
-        tools.find("a").click(function() {
-            CANVAS.addCC({elem: $(this)}); 
-        });
+    ELEMS = {
+        canvas: $("#canvas"),
+        tools: $("#tools")
     }
 
+    TOOLS.build();
+    CANVAS.build();
+});
+
+var ELEMS = { }
+
+var TOOLS = {
+
+    build: function() {
+
+        //setup basic tool containers
+        toolset = $('<div class="toolset"><ul/></div>');
+
+        //add title and IDs to container
+        bgTools = toolset.clone().attr("id","bg").prepend('<h2>BG</h2>');
+        fgToolsG = toolset.clone().attr("id","fgg").prepend('<h2>FG graphics</h2>');
+        fgToolsT = toolset.clone().attr("id","fgt").prepend('<h2>FG text</h2>');
+
+        //loop through all colors
+        for(i in TT2COLOR) {
+            //add an LI with the class being the colors short name
+            li = $("<li>").addClass(TT2COLOR[i].sname);
+
+            //add a link
+            a = $('<a href="#">').click(function() {
+                TOOLS.functions.toolClick($(this));
+            });
+
+            //build our full element
+            elem = li.append(a);
+
+            //add these to our UL
+            bgTools.find("ul").append(elem.clone({withDataAndEvents:true}));
+            fgToolsG.find("ul").append(elem.clone({withDataAndEvents:true}));
+            fgToolsT.find("ul").append(elem.clone({withDataAndEvents:true}));
+        }
+
+        //add the toolboxes to the tools area #tools
+        ELEMS.tools.append(bgTools, fgToolsG, fgToolsT);
+
+        //remove black from the foreground buttons as it wasn't a feature
+        // in classic teletext (who knew!?)
+        $("#fgg li.BK, #fgt li.BK").remove();
+    },
+    functions: {
+        toolClick: function(t) {
+            //select the LI
+            t = t.parent();
+
+            //a click can also unselect a tool
+            var unSelecting;
+            if(t.hasClass("selected")) {
+                t.removeClass("selected");
+                unSelecting = true;
+            }
+
+            toolset = t.parents("div.toolset");
+            type = toolset.attr("id");
+
+            //was a background button pressed? 
+            if(type=="bg") {
+                $("#bg li").removeClass("selected");
+            } else {
+                //if a foreground button was pressed, remove the selected
+                //class from both the graphics and text buttons (as you cant have both)
+                $("#fgg li, #fgt li").removeClass("selected");
+            }
+
+            if(!unSelecting) t.addClass("selected");
+
+            //work out what classes will be added to our marquee
+            ELEMS.toolClasses = "";
+            $("#tools li.selected").each(function() {
+                li = $(this);
+                liType = li.parents("div.toolset").attr("id");
+                liClass = li.attr("class").replace("selected","");
+                if(liType=="fgg") ELEMS.toolClasses += "graphics";
+                if((liType=="fgg") || (liType=="fgt")) ELEMS.toolClasses += (" foreground f" + liClass);
+                if(liType=="bg") ELEMS.toolClasses += (" background " + liClass);
+            })
+
+            console.log(ELEMS.toolClasses);
+
+            $("#marquee").attr("class","").addClass(ELEMS.toolClasses); 
+
+        }
+    }
 }
 
 var CANVAS = {
+    build: function() {
+        CANVAS.grid.build();
+    },
     grid: {
-        buildGrid: function() {
-            $(".container").css({
-                height: canvasHeight,
-                width: canvasWidth
-            });
-            $(".cursor").css({
-                height: blockY,
-                width: blockX
-            });
-            //build our array of grid pixel positions
-            for(a=0; a<=canvas.width(); a+=blockX) {
-                //x-axis
-                gridX.push(a);
-            }
-            var rowCount=0;
-            for(a=0; a<=canvas.height(); a+=blockY) {
-                //y-axis
-                gridY.push(a);
-                //add horizontal divs
-                canvas.append('<div class="row y' + a + '" id="row' + rowCount + '" style="height:' + blockY + 'px">');
-                rowCount++;
-            }
-            $("div.row").click(function() {
-                stickycursor.remove();
-                a = cursor.clone();
-                $(this).append(a.attr("id", "stickycursor"));
-                stickycursor = $("#stickycursor");
+        build: function() {
+            //set our table container
+            table = $('<table>').attr({
+                border: 0,
+                id: "grid",
+                cellspacing: 0,
+                cellpadding: 0
             });
 
+            for(row=1; row<=TT2CONSTANTS.LINES; row++) {
+                //add a TR
+                table.append($('<tr>').attr("id", ("row" + row)));
+                for(col=1; col<=TT2CONSTANTS.COLUMNS; col++) {
+                    //add TDs
+                    td = $('<td>')
+                        .addClass("col" + col)
+                        .click(function() {
+                            CANVAS.marquee.add($(this));
+                        });
+                    table.find("tr#row" + row).append(td);
+                }
+            }
+
+            //add our table to the canvas
+            ELEMS.canvas.append(table);
         },
-        snap: function(o) {
-            o.x = (Math.round(o.x/blockX)*blockX);
-            o.y = (Math.round(o.y/blockY)*blockY);
-            cursor.css('left', o.x).css('top', o.y);
-        },
-        node: {
-            get: {
-                //get a nodes position on the grid
-                top: function(elem) {
-                    return parseInt(elem.css("top"))
-                },
-                left: function(elem) {
-                    return parseInt(elem.css("left"))
-                },
-                row: function(elem) {
-                    return elem.parents("div.row").attr("id");
+        getPos: function(elem, type) {
+            //get clicked areas column by parsing the class of
+            //the TD that was clicked
+            eClass = elem.attr("class");
+
+            //extract the number from the classname
+            col = parseInt(eClass.substring(3,eClass.length))-1;
+
+            l = (col * TT2CONSTANTS.BLOCKX);
+
+            //get row data from TR id
+            rowId = elem.parent().attr("id");
+
+            //extract the number from the id
+            row = parseInt(rowId.substring(3,rowId.length)) -1;
+
+            t = (row * TT2CONSTANTS.BLOCKY);
+
+            if(type=="css") {
+                return {
+                    left: l + "px",
+                    top: t + "px"
                 }
-            },
-            move: {
-                //move a node in a particular direction
-                right: function(elem) {
-                    if(CANVAS.grid.node.at.right(elem)) return false;
-                    elem.css("left", (CANVAS.grid.node.get.left(elem) + blockX));
-                }
-            },
-            at: {
-                //is a node at the edge of the screen?
-                right: function(elem) {
-                    if((CANVAS.grid.node.get.left(elem)+blockX)==canvasWidth) return true;
-                }
+            } else {
+                return [l, t];
             }
         }
     },
-    keys: {
-        init: function() {
-            $(document).keydown(function(event) {
-                if($("body.canvas").length>0) CANVAS.keys[event]();
-            });
-        },
-        38: function() {
-            //up
-            CANVAS.node.move.up(cursor);
-        },
-        40: function() {
-            //down
-            CANVAS.node.move.down(cursor);
-        },
-        37: function() {
-            //left
-            CANVAS.node.move.left(cursor);
-        },
-        39: function() {
-            //right
-            CANVAS.node.move.right(cursor);
-        }
-    },
-    addCC: function(o) {
-        if(stickycursor.length<1) return false; //no sticky cursor - get outta here!
+    marquee: {
+        add: function(elem) {
 
-        //if we're at the right hand side, also get outta here!
-        if(CANVAS.grid.node.at.right(o.elem)) return false;
+            /* **********
+             * add a marquee to the canvas
+             ********** */
 
-        //remove any control character at this position
-        $('.control[style*="' + stickycursor.attr("style") + '"]').remove();
+            //remove any previous marquees
+            $("#marquee").remove();
 
-        palette = TT2COLOR[o.elem.attr("class").toUpperCase()]; //this is our colour
-        id = o.elem.parent().attr("id"); //this is the description of our tool
-        cls = "control cursor " + o.elem.attr("class"); //this is the color
-        cls += (id=="backgroundcolor") ? " background" : " foreground";
-        cls += (id.indexOf("graphics")>-1) ? " graphics" : ""; 
-        style = stickycursor.attr("style");
-        ctrl = $("<span>").attr({class: cls, style: stickycursor.attr("style")}).text(palette.sname);
-        ctrlWrapper = $("<div>");
-        stickycursor.parents("div.row").append(ctrl);
-        CANVAS.grid.node.move.right(stickycursor);
-        return false;
-    }
-}
+            //shared options for draggable and resizable
+            opts = {
+                grid: [TT2CONSTANTS.BLOCKX, TT2CONSTANTS.BLOCKY],
+                containment: 'parent',
+                snap: true,
+                stop: function(event, ui) {
+                    CANVAS.marquee.markGrid();
+                }
+            }
 
-var CURSOR = {
-    x: function() {
-        return parseInt(cursor.css("left"));
-    },
-    y: function() {
-        return parseInt(cursor.css("top"));
-    },
-    cursorInit: function() {
-        canvas.append('<div id="cursor" class="cursor">');
-        cursor = $("#cursor");
+            //get styles for marquee including its position and size
+            css = $.extend(CANVAS.grid.getPos(elem, "css"), CANVAS.marquee.getInitialSize(elem));
+
+            marquee = $('<div id="marquee">')
+                .css(css)
+                .resizable(opts)
+                .draggable(opts)
+                .append('<table id="marquee-inner"><tr><td id="control">&nbsp;</td><td id="action">&nbsp;</td></tr></table>');
+
+            ELEMS.marquee = marquee;
+            ELEMS.canvas.append(ELEMS.marquee);
+            CANVAS.marquee.markGrid();
+        },
+        markGrid: function(event, ui) {
+
+           /* **********
+            * For marking cells on the grid based on the position of the marquee
+            ********** */
+
+            //firstly remove previous overlap markers
+            $("#grid td").removeClass("overlapping");
+
+            //now mark overlapping TDs
+            $("#marquee").collision("#grid td").addClass("overlapping");
+        },
+        getInitialSize: function(elem) {
+
+            /* **********
+             * get initial size of a marquee, make sure it doesnt
+             * go outside the boundaries of the canvas
+             ********** */
+
+            pos = CANVAS.grid.getPos(elem, "array"); 
+            left = pos[0];
+            topp = pos[1];
+
+            //preferred height
+            height = (TT2CONSTANTS.BLOCKY * 3);
         
-		canvaswrapper.hover(function(){
-			$("body").addClass("canvas");
-			$(this).bind("mousemove", function(e) {
-                CANVAS.grid.snap({x: e.clientX, y: e.clientY});
-			}).click(function() {
-                stickycursor.remove();
-                a = cursor.clone().attr("id","stickycursor").css("top","0");
-                $('div.row.y' + CURSOR.y()).append(a);
-                stickycursor = $("#stickycursor");
-            });
-		}, 
-		function() {
-			$("body").removeClass("canvas");
-			$(this).unbind("mousemove");	
-		});
+            //if the width or height will go outside the bounds of the canvas make it smaller
+            //default width is fullwidth
+            width = TT2CONSTANTS.CANVASWIDTH-left;
+            height = ((topp + height) > TT2CONSTANTS.CANVASHEIGHT) ? (TT2CONSTANTS.CANVASHEIGHT-topp) : height;
+
+            return {
+                height: height + "px",
+                width: width + "px"
+            }
+        }
     }
 }
 

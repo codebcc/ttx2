@@ -15,14 +15,13 @@
 	<link media="all" rel="stylesheet" href="css/meyer-reset.css" />
 	<link media="all" rel="stylesheet" href="css/fonts.css" />
 	<link media="all" rel="stylesheet" href="css/main.css" />
-	<link media="all" rel="stylesheet" href="js/ui-lightness/jquery-ui-1.8.16.custom.css" />
     <!--[if lt IE 7]><link media="all" rel="stylesheet" href="css/ltie7.css" /><![endif]-->
 
 	<title>TELETEXT2</title>
 	
 	<script src="js/jquery-1.6.2.min.js"></script>
 	<script src="js/jquery-ui-1.8.16.custom.min.js"></script>
-    <script src="js/jquery-collision-1.0.1.js"></script>
+	<script src="js/jquery.simulate.js"></script>
     <script src="js/tt2.classes.js"></script>
 	<script src="js/default.js"></script>
 	
@@ -30,7 +29,12 @@
 
 <body> 
 <div id="canvas" class="container"></div>
-<div id="tools"></div>
+<div id="canvaswrapper" class="container"></div>
+<div id="tools">
+	<div id="textcolor" title="Text color"></div>
+	<div id="graphicscolor" title="Graphics color"></div>
+	<div id="backgroundcolor" title="Background color"></div>
+</div>
 	
 </body>
 
