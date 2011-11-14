@@ -1,49 +1,49 @@
-.BK {
-  background-color: black; }
+.b_BK, .toolset .f_BK {
+  background-color: black !important; }
 
-.R {
-  background-color: red; }
+.b_R, .toolset .f_R {
+  background-color: red !important; }
 
-.G {
-  background-color: lime; }
+.b_G, .toolset .f_G {
+  background-color: lime !important; }
 
-.Y {
-  background-color: yellow; }
+.b_Y, .toolset .f_Y {
+  background-color: yellow !important; }
 
-.BL {
-  background-color: blue; }
+.b_BL, .toolset .f_BL {
+  background-color: blue !important; }
 
-.M {
-  background-color: fuchsia; }
+.b_M, .toolset .f_M {
+  background-color: fuchsia !important; }
 
-.C {
-  background-color: aqua; }
+.b_C, .toolset .f_C {
+  background-color: aqua !important; }
 
-.W {
-  background-color: white; }
+.b_W, .toolset .f_W {
+  background-color: white !important; }
 
-.fBK {
+.f_BK, .f_BK textarea {
   color: black; }
 
-.fR {
+.f_R, .f_R textarea {
   color: red; }
 
-.fG {
+.f_G, .f_G textarea {
   color: lime; }
 
-.fY {
+.f_Y, .f_Y textarea {
   color: yellow; }
 
-.fBL {
+.f_BL, .f_BL textarea {
   color: blue; }
 
-.fM {
+.f_M, .f_M textarea {
   color: fuchsia; }
 
-.fC {
+.f_C, .f_C textarea {
   color: aqua; }
 
-.fW {
+.f_W, .f_W textarea {
   color: white; }
 
 body {
@@ -79,28 +79,54 @@ body {
   margin-right: 20px;
   position: relative;
   width: 480px; }
-  #canvas table#grid {
+  #canvas table#grid, #canvas table#preview-grid {
     position: absolute;
     left: 0;
     height: 100%;
     top: 0;
     width: 100%; }
-    #canvas table#grid td {
+    #canvas table#grid td, #canvas table#preview-grid td {
       height: 20px;
       width: 12px; }
-      #canvas table#grid td:hover {
+      #canvas table#grid td:hover, #canvas table#preview-grid td:hover {
         background-color: #fff; }
+  #canvas #marquee-layer {
+    left: 0;
+    position: absolute;
+    top: 0; }
   #canvas #marquee {
+    background: #333;
     height: 20px;
     position: absolute;
-    width: 12px; }
-    #canvas #marquee #marquee-inner {
-      opacity: .5;
+    width: 12px;
+    z-index: 1; }
+    #canvas #marquee table {
       width: 100%;
       height: 100%; }
-      #canvas #marquee #marquee-inner #control {
+      #canvas #marquee table td {
+        height: 100%; }
+      #canvas #marquee table .control-left, #canvas #marquee table .control-right {
         background: #00007f;
         display: none;
         width: 12px; }
-      #canvas #marquee #marquee-inner #action {
-        background: #fff; }
+      #canvas #marquee table .action textarea {
+        border: 0;
+        background: transparent;
+        display: none;
+        float: left;
+        font: normal 15px/20px ttx2;
+        height: 100%;
+        outline: none;
+        padding: 0;
+        position: relative;
+        resize: none;
+        z-index: 100; }
+    #canvas #marquee.foreground table .action textarea {
+      display: block; }
+    #canvas #marquee.graphics table .action textarea {
+      font: normal 20px/20px ttx2gra; }
+
+#tester {
+  background: black;
+  color: white;
+  font: normal 20px/20px ttx2gra; }

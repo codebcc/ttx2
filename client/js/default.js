@@ -10,6 +10,18 @@ $(document).ready(function () {
 
 var ELEMS = { }
 
+var FUNCTIONS = {
+    getPxInt: function(i) {
+        /* **********
+         * return an integer from EG 20px
+         ********** */
+        if(i==undefined) return 0;
+        i = parseInt(i.substring(0, (i.length-2)));
+        if(i.isNaN) i=0;
+        return i;
+    }
+}
+
 var TOOLS = {
 
     build: function() {
@@ -41,12 +53,18 @@ var TOOLS = {
             fgToolsT.find("ul").append(elem.clone({withDataAndEvents:true}));
         }
 
+        for(i in $(fgToolsG).find("li")) {
+            fgClass = fgToolsT.find("li").eq(i).attr("class");
+            $(fgToolsG).find("li").eq(i).attr("class","f_" + fgClass);
+            $(fgToolsT).find("li").eq(i).attr("class","f_" + fgClass);
+            $(bgTools).find("li").eq(i).attr("class","b_" + fgClass);
+        }
         //add the toolboxes to the tools area #tools
         ELEMS.tools.append(bgTools, fgToolsG, fgToolsT);
 
         //remove black from the foreground buttons as it wasn't a feature
         // in classic teletext (who knew!?)
-        $("#fgg li.BK, #fgt li.BK").remove();
+        $("li.f_BK").remove();
     },
     functions: {
         toolClick: function(t) {
@@ -81,13 +99,14 @@ var TOOLS = {
                 liType = li.parents("div.toolset").attr("id");
                 liClass = li.attr("class").replace("selected","");
                 if(liType=="fgg") ELEMS.toolClasses += "graphics";
-                if((liType=="fgg") || (liType=="fgt")) ELEMS.toolClasses += (" foreground f" + liClass);
+                if((liType=="fgg") || (liType=="fgt")) ELEMS.toolClasses += (" foreground " + liClass);
                 if(liType=="bg") ELEMS.toolClasses += (" background " + liClass);
             })
 
-            console.log(ELEMS.toolClasses);
-
             $("#marquee").attr("class","").addClass(ELEMS.toolClasses); 
+            //check for changes in control character area
+            CANVAS.marquee.checkEdges();
+            CANVAS.marquee.CCArea($("#marquee"));
 
         }
     }
@@ -96,6 +115,13 @@ var TOOLS = {
 var CANVAS = {
     build: function() {
         CANVAS.grid.build();
+        $("#canvas").prepend(
+            $('<div id="marquee-layer"/>').
+                css({
+                    height: TT2CONSTANTS.CANVASHEIGHT + "px",
+                    width: TT2CONSTANTS.CANVASWIDTH + "px"
+                })
+            )
     },
     grid: {
         build: function() {
@@ -169,6 +195,8 @@ var CANVAS = {
                 snap: true,
                 stop: function(event, ui) {
                     CANVAS.marquee.markGrid();
+                    CANVAS.marquee.checkEdges();
+                    CANVAS.marquee.CCArea($("#marquee"));
                 }
             }
 
@@ -179,11 +207,130 @@ var CANVAS = {
                 .css(css)
                 .resizable(opts)
                 .draggable(opts)
-                .append('<table id="marquee-inner"><tr><td id="control">&nbsp;</td><td id="action">&nbsp;</td></tr></table>');
+                .addClass(ELEMS.toolClasses)
+                .append('<table><tr><td class="control-left">&nbsp;</td><td class="action"><textarea class="marquee-text"></textarea></td><td class="control-right">&nbsp;</td></tr></table>');
 
             ELEMS.marquee = marquee;
             ELEMS.canvas.append(ELEMS.marquee);
+            CANVAS.marquee.checkEdges();
+            CANVAS.marquee.CCArea(marquee);
             CANVAS.marquee.markGrid();
+        },
+        CCArea: function(elem) {
+
+           /* **********
+            * Work out how much space the control characters will take up visually
+            ********** */
+
+            leftCC = elem.find(".control-left");
+            rightCC = elem.find(".control-right");
+            hasFg = elem.hasClass("foreground");
+            hasBg = elem.hasClass("background");
+
+            //white text on a black background is the default
+            //so we kind of dont need control characters for this
+            whiteFgLeftEdge = elem.is(".foreground.leftEdge.f_W");
+            blackBgLeftEdge = elem.is(".background.leftEdge.b_BK");
+            blackBgNotLeftEdge = (elem.is(".background._bBK") && !elem.hasClass("leftEdge"));
+            rightEdge = elem.is(".rightEdge");
+            notRightEdgeNotBgBlack = elem.is(".background:not(.rightEdge, .b_BK)");
+
+            console.log("hasFg:" + hasFg + " hasBg:" + hasBg + " whiteFgLeftEdge:" + whiteFgLeftEdge + " blackBgLeftEdge:" + blackBgLeftEdge + " blackBgNotLeftEdge:" + blackBgNotLeftEdge + " rightEdge:" + rightEdge + " notRightEdgeNotBgBlack:" + notRightEdgeNotBgBlack);
+
+
+            cc1 = (TT2CONSTANTS.BLOCKX) + "px";
+            cc2 = (TT2CONSTANTS.BLOCKX *2) + "px";
+            cc3 = (TT2CONSTANTS.BLOCKX *3) + "px";
+
+            //set defaults
+            display = "none";
+            displayRight = "table-cell";
+            width = cc3;
+            widthRight = cc1;
+
+            if(hasFg && !hasBg) {
+
+                //only forground
+                
+                //however if we're at the left edge and the silly user has
+                //chosen white there is no need for a control character
+                
+                display = (whiteFgLeftEdge) ? "none" : "table-cell";
+                width = cc1;
+
+            } else if(!hasFg && hasBg) {
+
+                //only background
+
+                if(blackBgNotLeftEdge) {
+                    //black not on left edge, only requires 1 cc
+                    width = cc1;
+                    display = "table-cell";
+                } else if(blackBgLeftEdge) {
+                    display = "none";
+                } else {
+                    //else its another color, needs 2 ccs
+                    width = cc2;
+                    display = "table-cell";
+                }
+
+            } else if(hasFg && hasBg) {
+
+                //both background and foreground
+
+                display = "table-cell";
+                width = (TT2CONSTANTS.BLOCKX * 3) + "px";
+
+                if(whiteFgLeftEdge && blackBgLeftEdge) {
+
+                    //silly user has just chosen default colours & is at the left edge, show no left gutter
+                    display = "none";
+
+                } else if(whiteFgLeftEdge && !blackBgLeftEdge) {
+
+                    //user has chosen default foreground color but a colored background & is on the left edge
+                    width = cc2;
+                    display = "table-cell";
+
+                } else if(!whiteFgLeftEdge && blackBgLeftEdge) {
+                    
+                    //user has chosen a black BG but a colored foreground & is on the left edge
+                    width = cc1;
+                    display = "table-cell";
+
+                } else if(blackBgNotLeftEdge) {
+                    
+                    //user is not on the left edge but has chosen black BG this only requires one CC for background
+                    width = cc2;
+                    display = "table-cell";
+                        
+                }
+
+            }
+
+            if(rightEdge || !notRightEdgeNotBgBlack) {
+
+                //if we're at the right or background color is black no need for
+                //CCs at the right
+                displayRight = "none";
+
+            }
+
+            leftCC.css({
+                display: display,
+                width: width
+            });
+
+            rightCC.css({
+                display: displayRight,
+                width: widthRight
+            });
+
+            $(".action").css("width", (elem.width()-((displayRight=="none") ? 0 : FUNCTIONS.getPxInt(widthRight))-((display=="none") ? 0 : FUNCTIONS.getPxInt(width))));
+            $(".action textarea").attr({style: $(".action").attr("style"), spellcheck: false});
+
+
+
         },
         markGrid: function(event, ui) {
 
@@ -196,6 +343,31 @@ var CANVAS = {
 
             //now mark overlapping TDs
             $("#marquee").collision("#grid td").addClass("overlapping");
+        },
+        checkEdges: function() {
+            
+            /* **********
+             * check if we are on the left or right edge
+             * as this determines control characters
+             ********** */
+
+            elem = $("#marquee");
+            left = FUNCTIONS.getPxInt(elem.css("left"));
+            width = $("#marquee").width();
+
+            //are we at the left edge?
+            if(left==0) {
+                elem.addClass("leftEdge");
+            } else {
+                elem.removeClass("leftEdge");
+            }
+
+            //are we at the right edge?
+            if((left + width)==TT2CONSTANTS.CANVASWIDTH) {
+                elem.addClass("rightEdge");
+            } else {
+                elem.removeClass("rightEdge");
+            }
         },
         getInitialSize: function(elem) {
 

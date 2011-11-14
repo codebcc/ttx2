@@ -20,23 +20,23 @@ $cyan: #0ff;
 $white: #fff;
 $cblue: #00007f; //control color
 
-.BK { background-color: $black; }
-.R { background-color: $red; }
-.G { background-color: $green; }
-.Y { background-color: $yellow; }
-.BL { background-color: $blue; }
-.M { background-color: $magenta; }
-.C { background-color: $cyan; }
-.W { background-color: $white; }
+.b_BK, .toolset .f_BK { background-color: $black !important; }
+.b_R, .toolset .f_R { background-color: $red !important; }
+.b_G, .toolset .f_G { background-color: $green !important; }
+.b_Y, .toolset .f_Y { background-color: $yellow !important; }
+.b_BL, .toolset .f_BL { background-color: $blue !important; }
+.b_M, .toolset .f_M { background-color: $magenta !important; }
+.b_C, .toolset .f_C { background-color: $cyan !important; }
+.b_W, .toolset .f_W { background-color: $white !important; }
 
-.fBK { color: $black; }
-.fR { color: $red; }
-.fG { color: $green; }
-.fY { color: $yellow; }
-.fBL { color: $blue; }
-.fM { color: $magenta; }
-.fC { color: $cyan; }
-.fW { color: $white; }
+.f_BK, .f_BK textarea { color: $black; }
+.f_R, .f_R textarea { color: $red; }
+.f_G, .f_G textarea { color: $green; }
+.f_Y, .f_Y textarea { color: $yellow; }
+.f_BL, .f_BL textarea { color: $blue; }
+.f_M, .f_M textarea { color: $magenta; }
+.f_C, .f_C textarea { color: $cyan; }
+.f_W, .f_W textarea { color: $white; }
 
 // ** End dynamic styles
 
@@ -92,7 +92,7 @@ body {
     margin-right: 20px;
     position: relative;
     width: $fw;
-    table#grid {
+    table#grid, table#preview-grid {
         position: absolute;
         left: 0;
         height: 100%;
@@ -108,23 +108,58 @@ body {
             }
         }
     }
+    #marquee-layer {
+        left: 0;
+        position: absolute;
+        top: 0;
+    }
     #marquee {
+        background: #333;
         height: $blockY;
         position: absolute;
         width: $blockX;
-        #marquee-inner {
-            opacity: .5;
+        z-index: 1;
+        table {
             width: 100%;
             height: 100%;
-            #control {
+            td {
+                height: 100%;
+            }
+            .control-left, .control-right {
                 background: $cblue;
                 display: none;
                 width: $blockX;
+
             }
-            #action {
-                background: #fff;
+            .action {
+                textarea {
+                    border: 0;
+                    background: transparent;
+                    display: none;
+                    float: left;
+                    font: normal 15px/20px ttx2;
+                    height: 100%;
+                    outline: none;
+                    padding: 0;
+                    position: relative;
+                    resize: none;
+                    z-index: 100;
+                }
             }
+        }
+        &.foreground table .action textarea {
+            display: block;
+        }
+        &.graphics table .action textarea {
+            font: normal 20px/20px ttx2gra;
+        }
+        .ui-resizable-se {
         }
     }
 }
 
+#tester {
+background: black;
+    color: white;
+    font: normal 20px/20px ttx2gra;
+}
