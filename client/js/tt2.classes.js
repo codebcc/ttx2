@@ -7,7 +7,7 @@
 TT2CONSTANTS = {
 	COLUMNS: 40,
 	LINES: 25,
-    BLOCKX: 12,
+    BLOCKX: 16,
     BLOCKY: 20
 }
 

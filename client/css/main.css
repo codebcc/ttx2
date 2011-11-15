@@ -22,28 +22,28 @@
 .b_W, .toolset .f_W {
   background-color: white !important; }
 
-.f_BK, .f_BK textarea {
+.f_BK, .f_BK .marquee-text {
   color: black; }
 
-.f_R, .f_R textarea {
+.f_R, .f_R .marquee-text {
   color: red; }
 
-.f_G, .f_G textarea {
+.f_G, .f_G .marquee-text {
   color: lime; }
 
-.f_Y, .f_Y textarea {
+.f_Y, .f_Y .marquee-text {
   color: yellow; }
 
-.f_BL, .f_BL textarea {
+.f_BL, .f_BL .marquee-text {
   color: blue; }
 
-.f_M, .f_M textarea {
+.f_M, .f_M .marquee-text {
   color: fuchsia; }
 
-.f_C, .f_C textarea {
+.f_C, .f_C .marquee-text {
   color: aqua; }
 
-.f_W, .f_W textarea {
+.f_W, .f_W .marquee-text {
   color: white; }
 
 body {
@@ -78,7 +78,7 @@ body {
   height: 500px;
   margin-right: 20px;
   position: relative;
-  width: 480px; }
+  width: 640px; }
   #canvas table#grid, #canvas table#preview-grid {
     position: absolute;
     left: 0;
@@ -87,7 +87,7 @@ body {
     width: 100%; }
     #canvas table#grid td, #canvas table#preview-grid td {
       height: 20px;
-      width: 12px; }
+      width: 16px; }
       #canvas table#grid td:hover, #canvas table#preview-grid td:hover {
         background-color: #fff; }
   #canvas #marquee-layer {
@@ -98,7 +98,7 @@ body {
     background: #333;
     height: 20px;
     position: absolute;
-    width: 12px;
+    width: 16px;
     z-index: 1; }
     #canvas #marquee table {
       width: 100%;
@@ -108,23 +108,25 @@ body {
       #canvas #marquee table .control-left, #canvas #marquee table .control-right {
         background: #00007f;
         display: none;
-        width: 12px; }
-      #canvas #marquee table .action textarea {
+        width: 16px; }
+      #canvas #marquee table .action .marquee-text {
         border: 0;
         background: transparent;
         display: none;
         float: left;
-        font: normal 15px/20px ttx2;
+        font: normal 16px/20px ttx2;
         height: 100%;
+        letter-spacing: 3px;
         outline: none;
         padding: 0;
         position: relative;
         resize: none;
         z-index: 100; }
-    #canvas #marquee.foreground table .action textarea {
+    #canvas #marquee.foreground table .action .marquee-text {
       display: block; }
-    #canvas #marquee.graphics table .action textarea {
-      font: normal 20px/20px ttx2gra; }
+    #canvas #marquee.graphics table .action .marquee-text {
+      font: normal 20px/20px ttx2gra;
+      letter-spacing: 0; }
 
 #tester {
   background: black;

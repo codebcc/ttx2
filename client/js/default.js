@@ -107,6 +107,7 @@ var TOOLS = {
             //check for changes in control character area
             CANVAS.marquee.checkEdges();
             CANVAS.marquee.CCArea($("#marquee"));
+            $("#marquee textarea").focus();
 
         }
     }
@@ -142,6 +143,7 @@ var CANVAS = {
                         .addClass("col" + col)
                         .click(function() {
                             CANVAS.marquee.add($(this));
+                            $("#marquee textarea").focus();
                         });
                     table.find("tr#row" + row).append(td);
                 }
@@ -208,7 +210,7 @@ var CANVAS = {
                 .resizable(opts)
                 .draggable(opts)
                 .addClass(ELEMS.toolClasses)
-                .append('<table><tr><td class="control-left">&nbsp;</td><td class="action"><textarea class="marquee-text"></textarea></td><td class="control-right">&nbsp;</td></tr></table>');
+                .append('<table><tr><td class="control-left">&nbsp;</td><td class="action"><div class="marquee-text" contentEditable="true"></div></td><td class="control-right">&nbsp;</td></tr></table>');
 
             ELEMS.marquee = marquee;
             ELEMS.canvas.append(ELEMS.marquee);
@@ -221,6 +223,8 @@ var CANVAS = {
            /* **********
             * Work out how much space the control characters will take up visually
             ********** */
+
+            rows = ($("#marquee").height()/TT2CONSTANTS.BLOCKY);
 
             leftCC = elem.find(".control-left");
             rightCC = elem.find(".control-right");
@@ -235,7 +239,7 @@ var CANVAS = {
             rightEdge = elem.is(".rightEdge");
             notRightEdgeNotBgBlack = elem.is(".background:not(.rightEdge, .b_BK)");
 
-            console.log("hasFg:" + hasFg + " hasBg:" + hasBg + " whiteFgLeftEdge:" + whiteFgLeftEdge + " blackBgLeftEdge:" + blackBgLeftEdge + " blackBgNotLeftEdge:" + blackBgNotLeftEdge + " rightEdge:" + rightEdge + " notRightEdgeNotBgBlack:" + notRightEdgeNotBgBlack);
+            //console.log("hasFg:" + hasFg + " hasBg:" + hasBg + " whiteFgLeftEdge:" + whiteFgLeftEdge + " blackBgLeftEdge:" + blackBgLeftEdge + " blackBgNotLeftEdge:" + blackBgNotLeftEdge + " rightEdge:" + rightEdge + " notRightEdgeNotBgBlack:" + notRightEdgeNotBgBlack);
 
 
             cc1 = (TT2CONSTANTS.BLOCKX) + "px";
@@ -327,7 +331,7 @@ var CANVAS = {
             });
 
             $(".action").css("width", (elem.width()-((displayRight=="none") ? 0 : FUNCTIONS.getPxInt(widthRight))-((display=="none") ? 0 : FUNCTIONS.getPxInt(width))));
-            $(".action textarea").attr({style: $(".action").attr("style"), spellcheck: false});
+            $(".action .marquee-text").attr({style: $(".action").attr("style"), spellcheck: false});
 
 
 

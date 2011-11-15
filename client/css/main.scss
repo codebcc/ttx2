@@ -2,7 +2,7 @@
 // * These styles will be set dynamically at some point
 // **********
 
-$blockX: 12px;
+$blockX: 16px;
 $blockY: 20px;
 $fw: $blockX * 40;
 $fh: $blockY * 25;
@@ -29,14 +29,14 @@ $cblue: #00007f; //control color
 .b_C, .toolset .f_C { background-color: $cyan !important; }
 .b_W, .toolset .f_W { background-color: $white !important; }
 
-.f_BK, .f_BK textarea { color: $black; }
-.f_R, .f_R textarea { color: $red; }
-.f_G, .f_G textarea { color: $green; }
-.f_Y, .f_Y textarea { color: $yellow; }
-.f_BL, .f_BL textarea { color: $blue; }
-.f_M, .f_M textarea { color: $magenta; }
-.f_C, .f_C textarea { color: $cyan; }
-.f_W, .f_W textarea { color: $white; }
+.f_BK, .f_BK .marquee-text { color: $black; }
+.f_R, .f_R .marquee-text { color: $red; }
+.f_G, .f_G .marquee-text { color: $green; }
+.f_Y, .f_Y .marquee-text { color: $yellow; }
+.f_BL, .f_BL .marquee-text { color: $blue; }
+.f_M, .f_M .marquee-text { color: $magenta; }
+.f_C, .f_C .marquee-text { color: $cyan; }
+.f_W, .f_W .marquee-text { color: $white; }
 
 // ** End dynamic styles
 
@@ -132,13 +132,14 @@ body {
 
             }
             .action {
-                textarea {
+                .marquee-text {
                     border: 0;
                     background: transparent;
                     display: none;
                     float: left;
-                    font: normal 15px/20px ttx2;
+                    font: normal 16px/20px ttx2;
                     height: 100%;
+                    letter-spacing: 3px;
                     outline: none;
                     padding: 0;
                     position: relative;
@@ -147,11 +148,12 @@ body {
                 }
             }
         }
-        &.foreground table .action textarea {
+        &.foreground table .action .marquee-text {
             display: block;
         }
-        &.graphics table .action textarea {
+        &.graphics table .action .marquee-text {
             font: normal 20px/20px ttx2gra;
+            letter-spacing: 0;
         }
         .ui-resizable-se {
         }
