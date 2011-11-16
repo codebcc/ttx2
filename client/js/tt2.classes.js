@@ -92,6 +92,93 @@ TT2COLOR = {
     }
 }
 
+var TT2CC = {
+    bg_r: {
+        unicode: "0140",
+        title: "Background Red"
+    },
+    bg_y: {
+        unicode: "0141",
+        title: "Background Yellow"
+    },
+    bg_b: {
+        unicode: "0142",
+        title: "Background Blue"
+    },
+    bg_m: {
+        unicode: "0143",
+        title: "Background Magenta"
+    },
+    bg_c: {
+        unicode: "0144",
+        title: "Background Cyan"
+    },
+    bg_n: {
+        unicode: "0145",
+        title: "New Background"
+    },
+    bg_w: {
+        unicode: "0146",
+        title: "Background White"
+    },
+    g_r: {
+        unicode: "0147",
+        title: "Graphics Red"
+    },
+    g_y: {
+        unicode: "0148",
+        title: "Graphics Yellow"
+    },
+    g_b: {
+        unicode: "0149",
+        title: "Graphics Blue"
+    },
+    g_m: {
+        unicode: "014A",
+        title: "Graphics Magenta"
+    },
+    g_g: {
+        unicode: "014B",
+        title: "Graphics Green"
+    },
+    g_c: {
+        unicode: "014C",
+        title: "Graphics Cyan"
+    },
+    g_w: {
+        unicode: "014D",
+        title: "Graphics White"
+    },
+    t_r: {
+        unicode: "014E",
+        title: "Text Red"
+    },
+    t_y: {
+        unicode: "014F",
+        title: "Text Yellow"
+    },
+    t_b: {
+        unicode: "0150",
+        title: "Text Blue"
+    },
+    t_m: {
+        unicode: "0151",
+        title: "Text Magenta"
+    },
+    t_g: {
+        unicode: "0152",
+        title: "Text Green"
+    },
+    t_c: {
+        unicode: "0153",
+        title: "Text Cyan"
+    },
+    t_w: {
+        unicode: "0154",
+        title: "Text White"
+    }
+}
+
 //Teletext2 Block prototype
 function TT2Block(){
 	

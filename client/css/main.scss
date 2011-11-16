@@ -113,7 +113,7 @@ body {
         position: absolute;
         top: 0;
     }
-    #marquee {
+    .marquee {
         background: #333;
         height: $blockY;
         position: absolute;
@@ -132,19 +132,25 @@ body {
 
             }
             .action {
+                .fresheditor-toolbar {
+                    display: none !important;
+                }
                 .marquee-text {
                     border: 0;
                     background: transparent;
                     display: none;
                     float: left;
-                    font: normal 16px/20px ttx2;
+                    font: normal 20px/20px ttx2;
                     height: 100%;
-                    letter-spacing: 3px;
-                    outline: none;
+                    outline: none; 
+                    overflow: hidden;
                     padding: 0;
                     position: relative;
                     resize: none;
                     z-index: 100;
+                    div {
+                        line-height: 20px;
+                    }
                 }
             }
         }
@@ -152,8 +158,7 @@ body {
             display: block;
         }
         &.graphics table .action .marquee-text {
-            font: normal 20px/20px ttx2gra;
-            letter-spacing: 0;
+            font-family: ttx2gra;
         }
         .ui-resizable-se {
         }

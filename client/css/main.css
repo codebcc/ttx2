@@ -94,39 +94,42 @@ body {
     left: 0;
     position: absolute;
     top: 0; }
-  #canvas #marquee {
+  #canvas .marquee {
     background: #333;
     height: 20px;
     position: absolute;
     width: 16px;
     z-index: 1; }
-    #canvas #marquee table {
+    #canvas .marquee table {
       width: 100%;
       height: 100%; }
-      #canvas #marquee table td {
+      #canvas .marquee table td {
         height: 100%; }
-      #canvas #marquee table .control-left, #canvas #marquee table .control-right {
+      #canvas .marquee table .control-left, #canvas .marquee table .control-right {
         background: #00007f;
         display: none;
         width: 16px; }
-      #canvas #marquee table .action .marquee-text {
+      #canvas .marquee table .action .fresheditor-toolbar {
+        display: none !important; }
+      #canvas .marquee table .action .marquee-text {
         border: 0;
         background: transparent;
         display: none;
         float: left;
-        font: normal 16px/20px ttx2;
+        font: normal 20px/20px ttx2;
         height: 100%;
-        letter-spacing: 3px;
         outline: none;
+        overflow: hidden;
         padding: 0;
         position: relative;
         resize: none;
         z-index: 100; }
-    #canvas #marquee.foreground table .action .marquee-text {
+        #canvas .marquee table .action .marquee-text div {
+          line-height: 20px; }
+    #canvas .marquee.foreground table .action .marquee-text {
       display: block; }
-    #canvas #marquee.graphics table .action .marquee-text {
-      font: normal 20px/20px ttx2gra;
-      letter-spacing: 0; }
+    #canvas .marquee.graphics table .action .marquee-text {
+      font-family: ttx2gra; }
 
 #tester {
   background: black;
