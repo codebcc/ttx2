@@ -1,0 +1,160 @@
+var a = lastX =  lastY = 0;
+var stickycursor = tools = canvas = cursor = cavaswrapper = $();
+var gridX = new Array();
+var gridY = new Array();
+var canvasInit = true;
+var blockX = 12;
+var blockY = 14;
+
+$(document).ready(function () {
+
+    tools = $("#tools");
+    canvas = $("#canvas");
+    canvaswrapper = $("#canvaswrapper");
+
+    //Build tools
+    TOOLS.build();
+
+    //build grid
+    CANVAS.grid.buildGrid();
+
+    //Add cursor
+    CANVAS.cursorInit();
+});
+
+var TOOLS = {
+    build: function() {
+        //make the phisical buttons
+        tools.find("div").each(function(j) {		
+            for(i in PALETTE) {
+                $(this).append('<a href="#" class="' + PALETTE[i].name + '" id="' + $(this).attr("id") + '-' + PALETTE[i].name + '" title="' + $(this).attr("title") + " " + PALETTE[i].name + '" style="background-position: left ' + (0-a) + 'px"></a>');
+                a=a+13;
+            };
+            a=a+(j*8);
+            a = a - ((j==1) ? 9 : 0);
+        });
+
+        //click actiond
+        tools.find("a").click(function() {
+            CANVAS.addCC({elem: $(this)}); 
+        });
+    }
+
+}
+
+var CANVAS = {
+    grid: {
+        buildGrid: function() {
+            for(a=0; a<=canvas.width(); a+=blockX) {
+                gridX.push(a);
+            }
+            for(a=0; a<=canvas.height(); a+=blockY) {
+                gridY.push(a);
+            }
+        },
+        snap: function(o) {
+            o.x = (Math.round(o.x/blockX)*blockX);
+            o.y = (Math.round(o.y/blockY)*blockY);
+            cursor.css('left', o.x).css('top', o.y);
+        }
+    },
+    addCC: function(o) {
+        if(stickycursor.length<1) return false; //no sticky cursor - get outta here!
+
+        //remove any control character at this position
+        $('.control[style*="' + stickycursor.attr("style") + '"]').remove();
+
+        palette = PALETTE[o.elem.attr("class")];
+        cls = "control " + o.elem.attr("class");
+        id = o.elem.parent().attr("id");
+        cls += (id=="backgroundcolor") ? " background" : " foreground";
+        cls += (id.indexOf("graphics")>-1) ? " graphics" : ""; 
+        style = stickycursor.attr("style");
+        style = function() {
+            if(id=="backgroundcolor") {
+                return "; background-color: #" + palette.color + "; color: #" + palette.contrast + ";";
+            } else {
+                return "; background-color: #" + palette.contrast + "; color: #" + palette.color + ";";
+            }
+        }
+        ctrl = $("<span>").attr({class: cls, style: stickycursor.attr("style") + style()}).text(palette.sname);
+        canvas.append(ctrl);
+    
+        return false;
+    },
+    cursorInit: function() {
+        canvas.append('<div id="cursor">');
+        cursor = $("#cursor");
+        
+		canvaswrapper.hover(function(){
+			$(this).bind("mousemove", function(e) {
+                CANVAS.grid.snap({x: e.clientX, y: e.clientY});
+			}).click(function() {
+                stickycursor.remove();
+                a = cursor.clone();
+                canvas.append(a.attr("id", "stickycursor"));
+                stickycursor = $("#stickycursor");
+            });
+		}, 
+		function() {
+			$(this).unbind("mousemove");	
+		});
+	
+    }
+}
+
+var PALETTE = {
+	black: {
+		name: "black",
+		color: "000",
+        sname: 'BK',
+        contrast: "ccc"
+	},
+	red: {
+		name: "red",
+		color: "f00",
+        sname: "R",
+        contrast: "ccc"
+	},
+	green: {
+		name: "green",
+		color: "0f0",
+        sname: "G",
+        contrast: "666"
+    },
+	yellow: {
+		name: "yellow",
+		color: "ff0",
+        sname: "Y",
+        contrast: "666"
+	},
+	blue: {
+		name: "blue",
+		color: "00f",
+        sname: "BL",
+        contrast: "ccc"
+	},	
+	magenta: {
+		name: "magenta",
+		color: "f0f",
+        sname: "M",
+        contrast: "666"
+	},	
+	cyan: {
+		name: "cyan",
+		color: "0f0",
+        sname: "C",
+        contrast: "666"
+	},	
+	white: {
+		name: "white",
+		color: "fff",
+        sname: "W",
+        contrast: "666"
+	}
+};
+
+Array.min = function( array ){
+        return Math.min.apply( Math, array );
+};
+
