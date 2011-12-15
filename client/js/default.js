@@ -10,8 +10,10 @@ $(document).ready(function () {
     CANVAS.build();
 
     $(document).jkey('backspace', function() {
-        if($("grid td.ui-selected").length>0) {
+        if($("#grid td.ui-selected").length>0) {
             CC.removeSelected();
+            DATA.elems.curMarquee.addClass("empty");
+            MARQUEE.removeEmpties();
         }
     });
 
@@ -23,6 +25,7 @@ var DATA = {
     blockX: 16,
     blockY: 20,
     textBoxCount: 1,
+    marqueeCount: 1,
     ccAttrs: ["background","color","foreground","text","graphics"]
 }
 
@@ -33,6 +36,7 @@ DATA = $.extend(DATA, {
 
 
 var TOOLS = {
+
     build: function() {
 
         //setup basic tool containers
@@ -79,6 +83,29 @@ var TOOLS = {
         //remove black from the foreground buttons as it wasn't a feature
         // in classic teletext (who knew!?)
         $("div.toolset[foreground] li.BK").remove();
+
+        //add other tools
+        marqueeRadio = $('<label/>')
+           .append(
+                $('<input type="radio" name="marqueeType" value="multi" />')
+           )
+           .append(
+                $('<span/>').text("Multi")
+           );
+        marqueeRadio2 = marqueeRadio.clone();
+
+        marqueeRadio2.find("input").attr("value", "point").removeAttr("checked");
+
+        marqueeRadio2.find("span").text("Point");
+
+        marqueeType = $('<div class="toolset" id="marqueeType"/>')
+            .append(marqueeRadio)
+            .append(marqueeRadio2);
+
+                
+        DATA.elems.tools.append(marqueeType);
+        DATA.elems.tools.find("div#marqueeType input[value='multi']").attr("checked",true);
+    
     },
     toolClick: function(t) {
 
@@ -96,7 +123,7 @@ var TOOLS = {
         } else {
             //we're selecting a new tool
             //only one foreground tool can be selected at a time
-            if(foreground) $("#tools").find("div.toolset[foreground='true'] li.selected").removeClass("selected");
+            if(foreground) $("#tools").find("div.toolset[foreground='foreground'] li.selected").removeClass("selected");
 
             if(background) toolset.find("li.selected").removeClass("selected");
             li.addClass("selected");
@@ -110,7 +137,7 @@ var TOOLS = {
 var CANVAS = {
     build: function() {
         //first build our psedu-grid        
-        DATA.elems.grid = $('<table id="grid"/>');
+        DATA.elems.grid = $('<table id="grid" class="grid"/>');
         for(i=1; i<=DATA.rows; i++) {
             DATA.elems.grid
                 .append(
@@ -133,30 +160,180 @@ var CANVAS = {
                     );
             }
         }
-        DATA.elems.canvas.append(DATA.elems.grid);
+        DATA.elems.canvas
+            .append(DATA.elems.grid)
+            .after($('<div id="help"/>'));
+
         $("#grid")
             .selectable({
-                start: function() {
+                stop: function(e) {
+                    MARQUEE.init();
                 },
-                stop: function() {
-                    CC.init();
-                },
-                filter: "tr, td"
-            })
+                filter: "td"
+            });
+
+    }
+}
+
+var MARQUEE = {
+
+    init: function() {
+
+        MARQUEE.removeEmpties();
+
+        if(DATA.elems.curMarquee) DATA.elems.curMarquee.removeClass("selected");
+
+        attrs = MARQUEE.getSelectedAttrs();
+
+        opts = {
+            grid: [
+                DATA.blockX,
+                DATA.blockY
+            ],
+            minWidth: (DATA.blockX *3),
+            zIndex: 50,
+            stop: function() {
+            },
+           containment: DATA.elems.canvas,
+        };
+
+        resizeOpts = $.extend(opts, {
+            resize: function() {
+                MARQUEE.moveFunctions();
+            },
+            stop: function() {
+                MARQUEE.removePreviousSelection();
+                MARQUEE.markSelectedBlocks();
+                CC.init();
+            }
+        });
+
+        dragOpts = $.extend(opts, {
+            drag: function() {
+                MARQUEE.moveFunctions();
+            },
+            obstacle: ".marquee:not(.selected)", 
+            preventCollision: true
+        });
+
+        DATA.elems.canvas.append(
+            $("<div/>")
+                .attr({
+                    id          : "marquee" + DATA.marqueeCount,
+                    "class"     : "marquee empty selected",
+                    rel         : DATA.marqueeCount
+                })
+                .css({
+                    height      : attrs.height,
+                    left        : attrs.left,
+                    position    : "absolute",
+                    top         : attrs.topp,
+                    width       : attrs.width
+                })
+                .click(function() {
+                    t = $(this);
+                    if(!t.hasClass("selected")) {
+                        MARQUEE.removeEmpties();
+                        DATA.elems.curMarquee.removeClass("selected");
+                        $(this).addClass("selected");
+                        DATA.elems.curMarquee = $("div.marquee.selected");
+                        MARQUEE.markSelectedBlocks();
+                    }
+                })
+                .resizable(resizeOpts)
+                .draggable(dragOpts)
+                .append('<div class="border"/>')
+        )
+
+        DATA.elems.curMarquee = $("div.marquee.selected");
+
+        MARQUEE.setBorder();
+
+        DATA.marqueeCount++;
 
     },
-    addTextareaClasses: function(ta) {
-        if(ta=="init") {
-            cls = "";
-            for(i = 1; i<= DATA.cols; i++) {
-                cls += " col" + i 
-            }
-            return cls;
+    getFloaterAttrs: function(marquee) {
+
+        topp    = FUNCTIONS.getCSSInt("top",marquee);
+        left    = FUNCTIONS.getCSSInt("left",marquee);
+        width   = FUNCTIONS.getCSSInt("width",marquee);
+        height  = FUNCTIONS.getCSSInt("height",marquee);
+        bottom  = topp + height;
+        right   = left + width;
+
+        return {
+            topp    : topp,
+            left    : left,
+            width   : width,
+            height  : height,
+            bottom  : bottom,
+            right   : right
         }
+
+    },
+    moveFunctions: function() {
+
+        MARQUEE.setBorder();
+
+    },
+    removeEmpties: function() {
+
+        empties = $("div.marquee.empty");
+
+        if(empties.length>0) {
+            empties.remove();
+            DATA.marqueeCount--;
+        }
+
+    },
+    setBorder: function() {
+        DATA.elems.curMarquee.find("div.border").height(DATA.elems.curMarquee.height()-2);
+    },
+    markSelectedBlocks: function() {
+        $("td.ui-selected").removeClass("ui-selected");
+        var hits = $("div.selected").eq(0).collision($("#grid td.col")) 
+            console.log(hits.length);
+        hits.addClass("ui-selected"); 
+    },
+    removePreviousSelection: function() {
+        curId = DATA.elems.curMarquee.attr("rel");
+        sels = $("#grid td[marquee='" + curId + "']");
+        if(sels.length<1) return false;
+        CC.removeSelected(sels);
+
+    },
+    getSelectedAttrs: function() {
+
+        firstCol = parseInt($("#grid td.ui-selected:first").attr("col"));
+        lastCol = parseInt($("#grid td.ui-selected:last").attr("col"));
+        firstRow = parseInt($("#grid td.ui-selected:first").attr("row"));
+        lastRow = parseInt($("#grid td.ui-selected:last").attr("row"));
+
+        topp = ((firstRow-1) * DATA.blockY);
+        left = ((firstCol-1) * DATA.blockX);
+        width = ((lastCol+1) - firstCol) * DATA.blockX;
+        height = ((lastRow+1) - firstRow) * DATA.blockY;
+        bottom = topp + height;
+        right = left + width;
+
+        return {
+            firstRow    : firstRow,
+            lastRow     : lastRow,
+            firstCol    : firstCol,
+            lastCol     : lastCol,
+            bottom      : bottom,
+            right       : right,
+            topp        : topp,
+            left        : left,
+            height      : height,
+            width       : width
+        }
+
     }
 }
 
 var CC = {
+
     init: function() {
 
         //*** Determine what control characters are required
@@ -200,7 +377,6 @@ var CC = {
 
         });
 
-
         //determine what CCs are needed
         for(i in tools) {
             tool = tools[i];
@@ -211,10 +387,7 @@ var CC = {
         DATA.tools = tools;
 
         //add our CCs to the grid
-        CC.addToGrid();
-
-        //att classes that will control the appearance of the grid
-        //CC.addClasses();
+        if(tools.length>0) CC.addToGrid();
 
     },
     addBG: function(tool) {
@@ -233,6 +406,8 @@ var CC = {
         return ($("#grid td.col1.ui-selected").length>0);
     },
     addToGrid: function() {
+
+        DATA.elems.curMarquee.removeClass("empty");
 
         firstCol = parseInt($("#grid td.ui-selected:first").attr("col"));
         lastCol = parseInt($("#grid td.ui-selected:last").attr("col"));
@@ -255,6 +430,7 @@ var CC = {
 
                 //add CC data to the grid
                 thisCol = $("#grid tr.row" + i + " td.col" + (firstCol + j));
+                if(DATA.ccArr[j].title=="New Background") CC.addNewBg(thisCol);
                 CC.addCCTD(thisCol, DATA.tools[j], DATA.ccArr[j]);
             }
         }
@@ -262,19 +438,30 @@ var CC = {
         //if we're not at the right edge add new background characters to last column
         if(!atRightEdge && bg) {
             td = $("#grid tr:lt(" + lastRow + "):gt(" + (firstRow-2) + ") td.col" + lastCol);
-            CC.addCCTD(td, {background: "black"}, ccs["b_bk"]);
+            CC.addNewBg(td);
         }
 
-        CC.addTextBox(firstCol, lastCol, firstRow, lastRow);
+    },
+    addNewBg: function(td) {
+        CC.addCCTD(td, {background: "background", color: COLORS["black"]}, ccs["b_bk"]);
     },
     addCCTD: function(td, toolObj, cc) {
+        //build classes
+        if(toolObj==undefined) return false;
+        cls="";
+        for(j in DATA.ccAttrs) {
+            ccAtt = DATA.ccAttrs[j];
+            if(toolObj) {
+                cls += (ccAtt=="color") ? toolObj.color.sname : toolObj[ccAtt];
+                cls += " ";
+            }
+        } 
         td
-            .addClass("cc")
+            .addClass("cc " + cls)
             .append(CC.addCC(cc))
             .attr((toolObj) ? CC.addAttributes(toolObj) : "")
     },
     addAttributes: function(tool) {
-
         if(tool==undefined) return {};
 
         return {
@@ -282,7 +469,8 @@ var CC = {
             background: tool.background,
             foreground: tool.foreground,
             graphics: tool.graphics,
-            text: tool.text
+            text: tool.text,
+            marquee: DATA.elems.curMarquee.attr("rel")
         }
 
     },
@@ -295,20 +483,26 @@ var CC = {
                 .text(String.fromCharCode(parseInt(ccData.unicode.toLowerCase(), 16)))
                 .attr({
                     "class": "cc"
-                })
-
+                });
     },
-    removeSelected: function() {
-        $("#grid td.ui-selected")
-            .attr({
-                color: "",
-                background: "",
-                foreground: "",
-                graphics: "",
-                text: ""
-            }).removeClass("cc")
+    removeSelected: function(elems) {
+        if(elems==undefined) elems=$("#grid td.ui-selected");
+        elems.each(function() {
+            t = $(this);
+            col = t.attr("col");
+            cls = "col col" + col + " ui-selectee ui-selected";
+            t
+                .attr({
+                    color: "",
+                    background: "",
+                    foreground: "",
+                    graphics: "",
+                    text: "",
+                    "class":cls
+                })
+                .find("span.cc").remove()
 
-            .find("span.cc").remove()
+        });
     },
     addClasses: function() {
         //Yup. We're going to go through the whole grid and add classes to squares based on CCs
@@ -336,6 +530,12 @@ var FUNCTIONS = {
         i = parseInt(i.substring(0, (i.length-2)));
         if(i.isNaN) i=0;
         return i;
+    },
+    getCSSInt: function(css, elem) {
+        return parseInt(elem.css(css));
+    },
+    help: function(txt) {
+        $("#help").text(txt);
     }
 }
 

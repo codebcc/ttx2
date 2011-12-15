@@ -118,39 +118,28 @@ textarea {
   width: 640px;
   z-index: 50; }
   #canvas div.marquee {
-    z-index: 50; }
-    #canvas div.marquee div.border {
-      border: 1px solid #333; }
-    #canvas div.marquee.selected div.border {
-      border: 1px dashed #fff; }
-  #canvas table.grid {
+    border: 1px dashed #fff; }
+  #canvas #grid {
     height: 500px;
-    width: 640px;
-    z-index: 50; }
-    #canvas table.grid tr td {
-      float: left;
+    width: 640px; }
+    #canvas #grid tr td {
       position: relative;
       height: 20px;
-      width: 16px;
-      z-index: 50; }
-      #canvas table.grid tr td:hover {
+      width: 16px; }
+      #canvas #grid tr td:hover {
         background-color: #fff; }
-      #canvas table.grid tr td.ui-selecting {
+      #canvas #grid tr td.ui-selecting {
         background-color: #666; }
-      #canvas table.grid tr td.ui-selected {
-        background-color: yellow; }
-        #canvas table.grid tr td.ui-selected span.cc {
-          background: #eee;
-          color: #666; }
-      #canvas table.grid tr td.ui-selecting span.cc {
+      #canvas #grid tr td.ui-selected span.cc {
+        background: #eee;
+        color: #666; }
+      #canvas #grid tr td.ui-selecting span.cc {
         background: #f00;
         color: #000; }
-      #canvas table.grid tr td span.cc {
+      #canvas #grid tr td span.cc {
         background: #666;
         display: block;
         color: #eee;
         font: normal 16px/20px ttx2gra;
         height: 20px;
-        position: relative;
-        width: 16px;
-        z-index: 100; }
+        width: 16px; }

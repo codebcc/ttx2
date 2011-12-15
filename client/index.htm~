@@ -23,8 +23,6 @@
 	<script src="js/jquery-1.6.2.min.js"></script>
 	<script src="js/jquery-ui-1.8.16.custom.min.js"></script>
 	<script src="js/jquery-collision-1.0.1.js"></script>
-	<script src="js/jquery-ui-draggable-collision-1.0.1.js"></script>
-
     <script src="js/tt2.classes.js"></script>
 
     <script src="js/jquery.jkey-1.2.js"></script>

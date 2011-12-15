@@ -67,7 +67,7 @@ $cblue: #00007f; //control color
 body {
     position: relative;
 }
-
+  
 textarea {
     background: #000;
     border: 0;
@@ -132,15 +132,30 @@ textarea {
     position: relative;
     width: $fw;
     z-index: 50;
-
-    #grid {
+ 
+    div.marquee {
+        div.border {
+            border: 1px solid #333;
+        }
+        &.selected {
+            div.border {
+                border: 1px dashed #fff;
+            }
+        }
+        z-index: 50;
+    }
+      
+    table.grid {
         height: $fh;
         width: $fw;
+        z-index: 50;
         tr {
             td {
+                float: left;
                 position: relative;
                 height: $blockY;
                 width: $blockX;
+                z-index: 50;
                 &:hover {
                     background-color: #fff;
                 }
@@ -148,9 +163,7 @@ textarea {
                     background-color: #666;
                 }
                 &.ui-selected {
-                    background-color: #ccc;
-                }
-                &.ui-selected {
+                    background-color: yellow;
                     span.cc {
                         background: #eee;
                         color: #666;
@@ -162,14 +175,15 @@ textarea {
                         color: #000;
                     }
                 }
-
                 span.cc {
                     background: #666;
                     display: block;
                     color: #eee;
                     font: normal #{$blockX}/#{$blockY} ttx2gra;
                     height: $blockY;
+                    position: relative;
                     width: $blockX;
+                    z-index: 100;
                 }
             }
         }
