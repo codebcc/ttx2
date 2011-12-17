@@ -20,45 +20,53 @@ $cyan: #0ff;
 $white: #fff;
 $cblue: #00007f; //control color
 
-.BK, .toolset .BK { background-color: $black !important; }
-.R, .toolset .R { background-color: $red !important; }
-.G, .toolset .G { background-color: $green !important; }
-.Y, .toolset .Y { background-color: $yellow !important; }
-.BL, .toolset .BL { background-color: $blue !important; }
-.M, .toolset .M { background-color: $magenta !important; }
-.C, .toolset .C { background-color: $cyan !important; }
-.W, .toolset .W { background-color: $white !important; }
-
-.BK, .BK .marquee-text { color: $black; }
-.R, .R .marquee-text { color: $red; }
-.G, .G .marquee-text { color: $green; }
-.Y, .Y .marquee-text { color: $yellow; }
-.BL, .BL .marquee-text { color: $blue; }
-.M, .M .marquee-text { color: $magenta; }
-.C, .C .marquee-text { color: $cyan; }
-.W, .W .marquee-text { color: $white; }
-
-
-/* @each $col in BK, R, G, Y, BL, M, C, W {
-  .#{$col} {
-    background-color: color($color);
-  }
-}
-
-@each $animal in puma, sea-slug, egret, salamander {
-  .#{$animal}-icon {
-    background-image: url('/images/#{$animal}.png');
-  }
-}
-
 @function color($col) {
     @if $col == "BK" { @return $black; }
     @if $col == "R" { @return $red; }
     @if $col == "G" { @return $green; }
-} */
+    @if $col == "Y" { @return $yellow; }
+    @if $col == "BL" { @return $blue; }
+    @if $col == "M" { @return $magenta; }
+    @if $col == "C" { @return $cyan; }
+    @if $col == "W" { @return $white; }
+} 
+
+@function buildTD($int) {
+    $td : "";
+    @for $i from 0 through $int {
+        $td : $td + " + td";
+    }
+    @return $td;
+}
+
+@each $col in BK, R, G, Y, BL, M, C, W {
+    .#{$col} {
+        background-color: color($col);
+    }
+    .f-#{$col} {
+        color: color($col);
+    }
+}
+
+/*
+    
+    oh + selector, y u so buggy?
+
+
+$td :"";
+@each $col in BK, R, G, Y, BL, M, C, W {
+    @for $i from 0 through 39 {
+        $td : buildTD($i);
+            #grid td.#{$col} + td.new #{$td} {
+                background-color: color($col);
+            }
+    }
+}
+
+*/
 
 // ** End dynamic styles
-
+ 
 
 // **********
 // * Tags
@@ -121,7 +129,7 @@ textarea {
 }
 
 .ui-selectable-helper {
-    border-color: #fff !important;
+    border-color: #fff;
 }
 
 #canvas {
@@ -163,7 +171,7 @@ textarea {
                     background-color: #666;
                 }
                 &.ui-selected {
-                    background-color: yellow;
+                    //background-color: yellow;
                     span.cc {
                         background: #eee;
                         color: #666;
@@ -174,6 +182,9 @@ textarea {
                         background: #f00;
                         color: #000;
                     }
+                }
+                &.collide {
+                    background-color: #f00;
                 }
                 span.cc {
                     background: #666;

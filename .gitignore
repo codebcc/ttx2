@@ -2,3 +2,4 @@
 .project
 server/node_modules
 .sass-cache
+*.*~

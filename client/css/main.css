@@ -1,68 +1,67 @@
-.BK, .toolset .BK {
-  background-color: black !important; }
+.BK {
+  background-color: black; }
 
-.R, .toolset .R {
-  background-color: red !important; }
-
-.G, .toolset .G {
-  background-color: lime !important; }
-
-.Y, .toolset .Y {
-  background-color: yellow !important; }
-
-.BL, .toolset .BL {
-  background-color: blue !important; }
-
-.M, .toolset .M {
-  background-color: fuchsia !important; }
-
-.C, .toolset .C {
-  background-color: aqua !important; }
-
-.W, .toolset .W {
-  background-color: white !important; }
-
-.BK, .BK .marquee-text {
+.f-BK {
   color: black; }
 
-.R, .R .marquee-text {
+.R {
+  background-color: red; }
+
+.f-R {
   color: red; }
 
-.G, .G .marquee-text {
+.G {
+  background-color: lime; }
+
+.f-G {
   color: lime; }
 
-.Y, .Y .marquee-text {
+.Y {
+  background-color: yellow; }
+
+.f-Y {
   color: yellow; }
 
-.BL, .BL .marquee-text {
+.BL {
+  background-color: blue; }
+
+.f-BL {
   color: blue; }
 
-.M, .M .marquee-text {
+.M {
+  background-color: fuchsia; }
+
+.f-M {
   color: fuchsia; }
 
-.C, .C .marquee-text {
+.C {
+  background-color: aqua; }
+
+.f-C {
   color: aqua; }
 
-.W, .W .marquee-text {
+.W {
+  background-color: white; }
+
+.f-W {
   color: white; }
 
-/* @each $col in BK, R, G, Y, BL, M, C, W {
-  .#{$col} {
-    background-color: color($color);
-  }
+/*
+    
+    oh + selector, y u so buggy?
+
+
+$td :"";
+@each $col in BK, R, G, Y, BL, M, C, W {
+    @for $i from 0 through 39 {
+        $td : buildTD($i);
+            #grid td.#{$col} + td.new #{$td} {
+                background-color: color($col);
+            }
+    }
 }
 
-@each $animal in puma, sea-slug, egret, salamander {
-  .#{$animal}-icon {
-    background-image: url('/images/#{$animal}.png');
-  }
-}
-
-@function color($col) {
-    @if $col == "BK" { @return $black; }
-    @if $col == "R" { @return $red; }
-    @if $col == "G" { @return $green; }
-} */
+*/
 body {
   position: relative; }
 
@@ -107,7 +106,7 @@ textarea {
           width: 20px; }
 
 .ui-selectable-helper {
-  border-color: #fff !important; }
+  border-color: #fff; }
 
 #canvas {
   background: #000;
@@ -137,14 +136,14 @@ textarea {
         background-color: #fff; }
       #canvas table.grid tr td.ui-selecting {
         background-color: #666; }
-      #canvas table.grid tr td.ui-selected {
-        background-color: yellow; }
-        #canvas table.grid tr td.ui-selected span.cc {
-          background: #eee;
-          color: #666; }
+      #canvas table.grid tr td.ui-selected span.cc {
+        background: #eee;
+        color: #666; }
       #canvas table.grid tr td.ui-selecting span.cc {
         background: #f00;
         color: #000; }
+      #canvas table.grid tr td.collide {
+        background-color: #f00; }
       #canvas table.grid tr td span.cc {
         background: #666;
         display: block;
