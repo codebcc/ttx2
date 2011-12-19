@@ -1,25 +1,9 @@
 $(document).ready(function () {
-    DATA = $.extend(DATA, {
-        elems: {
-            canvas: $("#canvas"),
-            tools: $("#tools"),
-        },
-        tdAttrs: FUNCTIONS.getTDAttrs()
-    });
 
+    DATA.FN.getPostLoadData();
     TOOLS.build();
     CANVAS.build();
-
-    $(document).jkey('backspace', function() {
-        tdSel = $("#grid td.ui-selected");
-        if(tdSel.length>0) {
-            CC.removeSelected();
-            DATA.elems.curMarquee.addClass("empty");
-            MARQUEE.removeEmpties();
-            MARQUEE.setTDClasses(FUNCTIONS.getCellsRange(tdSel), "clear");
-            tdSel.removeClass("ui-selected");
-        }
-    });
+    CANVAS.keys();
 
 });
 
@@ -29,15 +13,25 @@ var DATA = {
     blockX: 16,
     blockY: 20,
     textBoxCount: 1,
-    marqueeCount: 1,
-    ccAttrs: ["background","color","foreground","text","graphics","new"]
+    marqueeCount: 0,
+    $cells: {},
+    $rows: {},
+    ccAttrs: ["background","color","foreground","text","graphics","new"],
+    FN: {
+        getPostLoadData: function() {
+            DATA = $.extend(DATA, {
+                elems: {
+                    canvas: $("#canvas"),
+                    tools: $("#tools"),
+                },
+                tdAttrs: FN.getTDAttrs(),
+                canvasHeight: (DATA.blockY *  DATA.cols),
+                canvasWidth: (DATA.blockX * DATA.rows)
+            });
+
+        }
+    }
 }
-
-DATA = $.extend(DATA, {
-    canvasHeight: (DATA.blockY *  DATA.cols),
-    canvasWidth: (DATA.blockX * DATA.rows)
-});
-
 
 var TOOLS = {
 
@@ -47,14 +41,14 @@ var TOOLS = {
         toolset = $('<div class="toolset"><ul/></div>');
 
         //add title and IDs to container
-        bgTools = toolset.clone().attr("background","background").prepend('<h2>BG</h2>');
-        fgToolsG = toolset.clone().attr({foreground: "foreground", graphics: "graphics"}).prepend('<h2>FG graphics</h2>');
-        fgToolsT = toolset.clone().attr({foreground: "foreground", text: "text"}).prepend('<h2>FG text</h2>');
+        bgTools = toolset.clone().data("background","background").addClass("background").prepend('<h2>BG</h2>');
+        fgToolsG = toolset.clone().data({foreground: "foreground", graphics: "graphics"}).addClass("graphics foreground").prepend('<h2>FG graphics</h2>');
+        fgToolsT = toolset.clone().data({foreground: "foreground", text: "text"}).addClass("text foreground").prepend('<h2>FG text</h2>');
 
         //loop through all colors
         for(i in COLORS) {
             //add an LI with the class being the colors short name
-            li = $("<li>").attr("color",COLORS[i].name.toLowerCase()).addClass(COLORS[i].sname);
+            li = $("<li>").data("color",COLORS[i].name.toLowerCase()).addClass(COLORS[i].sname);
 
             //add a link
             a = $('<a href="#">').click(function() {
@@ -89,40 +83,51 @@ var TOOLS = {
         $("div.toolset[foreground] li.BK").remove();
 
         //add other tools
-        marqueeRadio = $('<label/>')
-           .append(
-                $('<input type="radio" name="marqueeType" value="multi" />')
-           )
-           .append(
-                $('<span/>').text("Multi")
-           );
-        marqueeRadio2 = marqueeRadio.clone();
+        //preview
+        preview = $('<div class="toolset"/>')
+            .append($('<input type="checkbox"/>')
+                .change(function() {
+                    DATA.elems.canvas.toggleClass("preview");
+                })
+            )
+            .append($('<span/>').text("Preview"));
+        $("div.toolset:last-child").after(preview);
 
-        marqueeRadio2.find("input").attr("value", "point").removeAttr("checked");
+    },
+    setTools: function(tools) {
 
-        marqueeRadio2.find("span").text("Point");
+        //set tools back to a previous configuration
 
-        marqueeType = $('<div class="toolset" id="marqueeType"/>')
-            .append(marqueeRadio)
-            .append(marqueeRadio2);
+        TOOLS.reset();
 
-                
-        DATA.elems.tools.append(marqueeType);
-        DATA.elems.tools.find("div#marqueeType input[value='multi']").attr("checked",true);
-    
+        for(i in tools) {
+            t = tools[i];
+            if(t.background) {
+                tsClass = "background";
+            } else if (t.graphics) {
+                tsClass = "graphics";
+            } else if (t.text) {
+                tsClass = "text";
+            } else {
+                tsClass = "";
+            }
+            par = (tsClass=="") ? $("#tools") : $("#tools div." + tsClass);
+
+            if(t.color) par.find("li." + t.color.sname).addClass("selected");
+        }
     },
     reset: function() {
         DATA.elems.tools.find("li.selected").removeClass("selected");
     },
     toolClick: function(t) {
 
-
         //what type of tool was clicked?
+        
         toolset = t.parents("div.toolset");
         li = t.parent();
 
-        foreground = toolset.attr("foreground");
-        background = toolset.attr("background");
+        foreground = toolset.data("foreground");
+        background = toolset.data("background");
 
         //mark selection of tools in the toolbar
         if(li.hasClass("selected")) {
@@ -131,7 +136,7 @@ var TOOLS = {
         } else {
             //we're selecting a new tool
             //only one foreground tool can be selected at a time
-            if(foreground) $("#tools").find("div.toolset[foreground='foreground'] li.selected").removeClass("selected");
+            if(foreground) $("#tools").find("div.toolset.foreground li.selected").removeClass("selected");
 
             if(background) toolset.find("li.selected").removeClass("selected");
             li.addClass("selected");
@@ -139,41 +144,43 @@ var TOOLS = {
 
         tdSelected = $("#grid td.ui-selected");
 
-        MARQUEE.setTDClasses(FUNCTIONS.getCellsRange(tdSelected), "clear");
-
         //add control characters to the grid
         if(tdSelected.length>0) CC.init();
 
-        MARQUEE.setTDClasses(FUNCTIONS.getCellsRange(tdSelected), "add");
-        //console.log(FUNCTIONS.getCellsRange(tdSelected));
+        DATA.elems.curMarquee.data('tools',DATA.tools);
+
+        MARQUEE.setTDClasses("add");
+
     }
 }
 
 var CANVAS = {
+
     build: function() {
-        //first build our psedu-grid        
+        //first build our grid        
         DATA.elems.grid = $('<table id="grid" class="grid"/>');
         for(i=1; i<=DATA.rows; i++) {
             DATA.elems.grid
                 .append(
                     $('<tr>')
                         .attr({
-                            "class": ("row" + i),
-                            "class": ("row" + i),
-                            rel: i
+                            id: ("row" + i)
                         })
                 );
 
             for(j =1; j<= DATA.cols; j++) {
-                DATA.elems.grid.find(".row" + i)
+                DATA.elems.grid.find("tr#row" + i)
                     .append(
                         $('<td>')
                             .attr({
-                                "class":("col col" + j),
-                                col: j,
-                                row: i
+                                id: ("cell" + i + "_" + j)
+                            })
+                            .data({
+                                row: i,
+                                col: j
                             })
                     );
+                DATA.$cells["cell" + i + "_" + j] = DATA.elems.grid.find("#cell" + i + "_" + j);
             }
         }
         DATA.elems.canvas
@@ -182,32 +189,61 @@ var CANVAS = {
 
         $("#grid")
             .selectable({
-                selecting: function(e,ui) {
-                    td = $(ui.selecting);
-                    hits = $("div.marquee").collision(td) 
-                    if(hits.length>0) td.addClass("collide");
-                },
-                unselecting: function(e,ui) {
-                    td = $(ui.unselecting);
-                    td.removeClass("collide");
-                },
                 stop: function(e) {
-                    MARQUEE.removeEmpties();
-                    //dont make a selection if marquee selection overlaps another marquee
                     coll = $("#grid td.collide");
                     if(coll.length>0) {
-                        FUNCTIONS.help("Marquees must not overlap");
-                        coll.removeClass("collide");
-                        $("#grid td.ui-selected").removeClass("ui-selected");
+                        $("#grid td").removeClass("collide ui-selected");
+                        MARQUEE.activate($("#marquee" + DATA.marqueeCount));
                     } else {
-                        FUNCTIONS.help("");
                         MARQUEE.init();
+                        FN.help("");
                     }
+                },
+                start: function() {
+                    MARQUEE.removeEmpties();
+                },
+                selecting: function(e,ui) {
+                    s = $(ui.selecting);
+                    MARQUEE.markCollisions($(ui.selecting), $("div.marquee"));
+                },
+                unselecting: function(e,ui) {
+                    u = $(ui.unselecting);
+                    MARQUEE.unMarkCollisions($(ui.unselecting), $("div.marquee"));
                 },
                 filter: "td",
                 cancel: "td.ui-selected"
             });
 
+    },
+
+    keys: function() {
+        $(document).jkey('backspace', function() {
+            tdSel = $("#grid td.ui-selected");
+            if(tdSel.length>0) {
+                CC.removeSelected();
+                DATA.elems.curMarquee.addClass("empty");
+                MARQUEE.removeEmpties();
+                MARQUEE.setTDClasses("clear");
+                tdSel.removeClass("ui-selected");
+            }
+        });
+    },
+    loop: function(opts) {
+
+        //loop through every cell in the table and perform a function
+        
+        for(i=1;i<=DATA.rows;i++) {
+
+            if(opts.trFunction) opts.trFunction();
+
+            for(j=1;j<=DATA.cols;j++) {
+
+                td = FN.getCell(i,j);
+                if(opts.tdFunction) opts.tdFunction(td);
+
+            }
+
+        }
     }
 }
 
@@ -215,66 +251,120 @@ var MARQUEE = {
 
     init: function() {
 
+        DATA.marqueeCount++;
+
         MARQUEE.removeEmpties();
 
         TOOLS.reset();
 
-        if(DATA.elems.curMarquee) DATA.elems.curMarquee.removeClass("selected");
-
         attrs = MARQUEE.getSelectedAttrs();
 
-        DATA.elems.canvas.append(
-            $("<div/>")
-                .attr({
-                    id          : "marquee" + DATA.marqueeCount,
-                    "class"     : "marquee empty selected",
-                    rel         : DATA.marqueeCount
-                })
-                .css({
-                    height      : attrs.height,
-                    left        : attrs.left,
-                    position    : "absolute",
-                    top         : attrs.topp,
-                    width       : attrs.width
-                })
-        );
+        DATA.elems.canvas
+            .append(
+                $("<div/>")
+                    .attr({
+                        id          : "marquee" + DATA.marqueeCount,
+                        "class"     : "marquee empty selected",
+                        rel         : DATA.marqueeCount
+                    })
+                    .css({
+                        height      : attrs.height,
+                        left        : attrs.left,
+                        position    : "absolute",
+                        top         : attrs.topp,
+                        width       : attrs.width
+                    })
+                    .data("id",DATA.marqueeCount)
+            )
+            .append(
+                $('<div class="toolbar" id="toolbar' + DATA.marqueeCount + '"/>')
+                    .css({
+                        height  : "20px",
+                        left    : attrs.left,
+                        top     : attrs.topp-20
+                    })
+                    .append(
+                        $('<a href="#"/>')
+                            .text("Cancel edit mode")
+                            .click(function() {
+                                MARQUEE.editMode.cancel();
+                                return false;
+                            })
+                    )
+            );
 
-
-        
-        DATA.elems.curMarquee = $("div.marquee.selected");
+        MARQUEE.activate($("#marquee" + DATA.marqueeCount));
 
         MARQUEE.makeDynamic(DATA.elems.curMarquee);
 
         MARQUEE.setBorder();
 
-        DATA.marqueeCount++;
 
     },
-    setTDClasses: function(range,type) {
-        for(i=range.firstRow;i<=range.lastRow;i++) {
-            tr = $("#grid tr.row" + i);
-            cls = "";
-            tr.find("td").each(function() {
-                t = $(this);
-                if(t.hasClass("cc")) {
-                    if(!DATA.newCCGroup) cls="";
-                    DATA.newCCGroup = true;
-                    //this is a control character, what does it do?
-                    if(t.attr("background")=="background") cls += COLORS[t.attr("color")].sname + " ";
-                    if(t.attr("foreground")=="foreground") cls += "f-" + COLORS[t.attr("color")].sname + " ";
-                    if(t.attr("graphics")=="graphics") cls += " graphics ";
+    editMode: {
+
+        init: function() {
+
+            DATA.elems.curMarquee.toggleClass("edit");
+            DATA.elems.curToolbar = $("div#toolbar" + DATA.elems.curMarquee.data("id"));
+            DATA.elems.curToolbar.show();
+
+        },
+
+        cancel: function() {
+            $("#canvas div.edit").removeClass("edit");
+            DATA.elems.curToolbar.hide();
+        },
+
+        repositionToolbar: function() {
+            DATA.elems.curToolbar.css({
+                top: FN.getPxInt(DATA.elems.curMarquee.css("top"))-20,
+                left: DATA.elems.curMarquee.css("left")
+            })
+        }
+
+    },
+    setTDClasses: function(type) {
+
+        DATA.type=type;
+
+        CANVAS.loop({
+            
+            trFunction: function() {
+
+                DATA.rowData = {};
+                DATA.cls = "";
+
+            },
+            tdFunction: function(td) {
+
+                if(td.hasClass("cc")) {
+
+                    col = td.data("color") ? COLORS[td.data("color")].sname : "";
+                    if(td.data("background")=="background") DATA.rowData.background = col;
+                    if(td.data("foreground")=="foreground") DATA.rowData.foreground = "f-" + col;
+                    if(td.data("graphics")=="graphics") DATA.rowData.foregroundType = "graphics";
+                    if(td.data("text")=="text") DATA.rowData.foregroundType = "text";
+
+                    if(DATA.rowData.background) DATA.cls = DATA.rowData.background + " ";
+                    if(DATA.rowData.foreground) DATA.cls += DATA.rowData.foreground + " ";
+                    if(DATA.rowData.foregroundType) DATA.cls += DATA.rowData.foregroundType;
+
                 } else {
-                    if(type=="clear") {
-                        for(j in DATA.tdAttrs) {
-                            t.removeClass(DATA.tdAttrs[j]);
-                        }
-                    } else {
-                        DATA.newCCGroup = false;
-                        t.addClass(cls);
-                    }
+                    DATA.newCCGroup = false;
+
+                    cd = td.data("classes");
+                    cd = cd ? cd : "";
+                    classes = cd + " " + $.trim(DATA.cls);
+                    td
+                        .removeClass(classes)
+                        .addClass($.trim(DATA.cls))
+                        .data("classes",$.trim(DATA.cls));
+
                 }
-            });
-        }    
+            }
+        });
+                
     },
     makeDynamic: function(elem) {
 
@@ -286,15 +376,15 @@ var MARQUEE = {
             minWidth: (DATA.blockX *4),
             zIndex: 50,
             stop: function(e,ui) {
-                console.log(ui,e);
-                MARQUEE.removePreviousSelection();
+                CC.removeSelected(DATA.previousSelection);
                 MARQUEE.markSelectedBlocks();
                 MARQUEE.alignToGrid(); //because snapping is buggy :(
                 CC.init();
-                MARQUEE.setTDClasses(FUNCTIONS.getCellsRange($(ui.helper[0])), "add");
+                MARQUEE.setTDClasses("add");
+                MARQUEE.editMode.repositionToolbar();
             },
             start: function(e,ui) {
-                MARQUEE.setTDClasses(FUNCTIONS.getCellsRange($(ui.helper[0])), "clear");
+                MARQUEE.savePreviousSelection();
             },
            containment: DATA.elems.canvas,
         };
@@ -303,16 +393,19 @@ var MARQUEE = {
         resizeOpts = {};
 
         $.extend(resizeOpts, opts, {
-            resize: function() {
-                MARQUEE.moveFunctions();
+            resize: function(e,ui) {
+                elem = $(ui.element);
+                console.log(ui);
+                MARQUEE.moveFN();
+                MARQUEE.markCollisions(DATA.elems.curMarquee, $("div.marquee:not(.selected)"));
             }
         });
 
         $.extend(dragOpts, opts, {
             drag: function() {
-                MARQUEE.moveFunctions();
+                MARQUEE.moveFN();
             },
-            delay: 250,
+            delay: 100,
             obstacle: ".marquee:not(.selected)", 
             preventCollision: true
         });
@@ -320,17 +413,39 @@ var MARQUEE = {
 
         elem.click(function() {
             t = $(this);
-            if(!t.hasClass("selected")) {
-                MARQUEE.removeEmpties();
-                DATA.elems.curMarquee.removeClass("selected");
-                $(this).addClass("selected");
-                DATA.elems.curMarquee = $("div.marquee.selected");
-            }
+            MARQUEE.activate(t);
+        })
+        .dblclick(function() {
+            MARQUEE.editMode.init();
         })
         .resizable(resizeOpts)
         .draggable(dragOpts)
         .append('<div class="border"/>')
 
+    },
+    activate: function(marquee) {
+
+        if($("div.edit").length>0) MARQUEE.editMode.cancel();
+
+        if(DATA.elems.curMarquee) if(!DATA.elems.curMarquee.hasClass("empty"))MARQUEE.removeEmpties();
+
+        if(DATA.elems.curMarquee) {
+            DATA.elems.curMarquee
+                .removeClass("selected")
+                .resizable("disable")
+                .draggable("disable");
+        }
+
+        marquee
+            .addClass("selected")
+            .resizable("enable")
+            .draggable("enable");
+
+        DATA.elems.curMarquee = marquee;
+        DATA.elems.curToolbar = $("div#toolbar" + DATA.elems.curMarquee.data("id"));
+        MARQUEE.markSelectedBlocks();
+        tools = marquee.data("tools");
+        if(tools)TOOLS.setTools(tools);
     },
     alignToGrid: function() {
         attrs = MARQUEE.getSelectedAttrs();
@@ -344,10 +459,10 @@ var MARQUEE = {
     },
     getFloaterAttrs: function(marquee) {
 
-        topp    = FUNCTIONS.getCSSInt("top",marquee);
-        left    = FUNCTIONS.getCSSInt("left",marquee);
-        width   = FUNCTIONS.getCSSInt("width",marquee);
-        height  = FUNCTIONS.getCSSInt("height",marquee);
+        topp    = FN.getCSSInt("top",marquee);
+        left    = FN.getCSSInt("left",marquee);
+        width   = FN.getCSSInt("width",marquee);
+        height  = FN.getCSSInt("height",marquee);
         bottom  = topp + height;
         right   = left + width;
 
@@ -361,7 +476,7 @@ var MARQUEE = {
         }
 
     },
-    moveFunctions: function() {
+    moveFN: function() {
 
         MARQUEE.setBorder();
 
@@ -372,7 +487,6 @@ var MARQUEE = {
 
         if(empties.length>0) {
             empties.remove();
-            DATA.marqueeCount--;
         }
 
     },
@@ -384,22 +498,18 @@ var MARQUEE = {
             .removeData("jqueryCollisionCoordinates")
             .removeData("jqueryUiDraggableCollisionRecentPosition");
         $("#grid td.ui-selected").removeClass("ui-selected");
-        hits = DATA.elems.curMarquee.collision($("#grid td.col")) 
-        hits.addClass("ui-selected"); 
+        hits = DATA.elems.curMarquee.collision($("#grid td")) 
+        hits.addClass("ui-selected").data("marquee",DATA.elems.curMarquee.data("id"));
     },
-    removePreviousSelection: function() {
-        curId = DATA.elems.curMarquee.attr("rel");
-        sels = $("#grid td[marquee='" + curId + "']");
-        if(sels.length<1) return false;
-        CC.removeSelected(sels);
-
+    savePreviousSelection: function() {
+        DATA.previousSelection = $("#grid td.ui-selected");
     },
     getSelectedAttrs: function() {
 
-        firstCol = parseInt($("#grid td.ui-selected:first").attr("col"));
-        lastCol = parseInt($("#grid td.ui-selected:last").attr("col"));
-        firstRow = parseInt($("#grid td.ui-selected:first").attr("row"));
-        lastRow = parseInt($("#grid td.ui-selected:last").attr("row"));
+        firstCol = parseInt($("#grid td.ui-selected:first").data("col"));
+        lastCol = parseInt($("#grid td.ui-selected:last").data("col"));
+        firstRow = parseInt($("#grid td.ui-selected:first").data("row"));
+        lastRow = parseInt($("#grid td.ui-selected:last").data("row"));
 
         topp = ((firstRow-1) * DATA.blockY);
         left = ((firstCol-1) * DATA.blockX);
@@ -421,6 +531,24 @@ var MARQUEE = {
             width       : width
         }
 
+    },
+    markCollisions: function(collider, obstacle) {
+        hits = obstacle.collision(collider);
+        collider = (collider.hasClass("marquee")) ? DATA.elems.curMarquee : collider;
+        if(hits.length>0) {
+            collider.addClass("collide");
+            FN.help("Marquees must not overlap!");
+        } else {
+            collider.removeClass("collide");
+        }
+    },
+    unMarkCollisions: function(collider, obstacle) {
+        hits = obstacle.collision(collider);
+        if(hits.length!=0) {
+            hits.removeClass("collide");
+        } else {
+            FN.help("");
+        }
     }
 }
 
@@ -446,11 +574,11 @@ var CC = {
             t = $(this);
             toolset = t.parents("div.toolset");
             tools[i] = {
-                background:     toolset.attr("background"),
-                foreground:     toolset.attr("foreground"),
-                text:           toolset.attr("text"),
-                graphics:       toolset.attr("graphics"),
-                color:          t.attr("color") ? COLORS[t.attr("color")] : false,
+                background:     toolset.data("background"),
+                foreground:     toolset.data("foreground"),
+                text:           toolset.data("text"),
+                graphics:       toolset.data("graphics"),
+                color:          t.data("color") ? COLORS[t.data("color")] : false,
                 cc:             ccs[t.attr("cc")]
             }
 
@@ -492,10 +620,10 @@ var CC = {
 
         //check marquee is big enough to hold the CCs
         ccLen = DATA.ccArr.length;
-        if(FUNCTIONS.getCSSInt("width",DATA.elems.curMarquee) < (ccLen*DATA.blockX)) {
-            FUNCTIONS.help("Marquee too small");
+        if(FN.getCSSInt("width",DATA.elems.curMarquee) < (ccLen*DATA.blockX)) {
+            FN.help("Marquee too small");
         } else {
-            FUNCTIONS.help("");
+            FN.help("");
             //add our CCs to the grid
             if(tools.length>0) CC.addToGrid();
         }
@@ -516,26 +644,29 @@ var CC = {
     },
     checkLeftEdge: function() {
         //is our selection touching the left edge?
-        return ($("#grid td.col1.ui-selected").length>0);
+        return ($("#grid td#cell1_1.ui-selected").length>0);
     },
     addToGrid: function() {
 
         DATA.elems.curMarquee.removeClass("empty");
 
-        cr = FUNCTIONS.getCellsRange($("#grid td.ui-selected"));
+        cr = FN.getCellsRange($("#grid td.ui-selected"));
 
         //delete any CCs covered by this selection
-        CC.removeSelected();
+        //CC.removeSelected();
 
         atRightEdge = ($("#grid td.col40.ui-selected").length>0);
 
         //add CCs to the grid
         for(i = cr.firstRow; i<=cr.lastRow; i++) {
+
             for(j in DATA.ccArr) {
+
                 j = parseInt(j);
 
                 //add CC data to the grid
-                thisCol = $("#grid tr.row" + i + " td.col" + (cr.firstCol + j));
+                thisCol = FN.getCell(i,(cr.firstCol+j));
+
                 CC.addCCTD(thisCol, DATA.tools[j], DATA.ccArr[j]);
             }
         }
@@ -548,11 +679,12 @@ var CC = {
 
         if(toolObj==undefined) return false;
         td
-            .addClass("cc ")
+            .addClass("cc")
             .append(CC.addCC(cc))
-            .attr((toolObj) ? CC.addAttributes(toolObj) : "")
+            .data((toolObj) ? CC.addData(toolObj) : "")
+
     },
-    addAttributes: function(tool) {
+    addData: function(tool) {
         if(tool==undefined) return {};
         color = (tool.color) ? tool.color.name.toLowerCase() : "";
         return {
@@ -562,13 +694,9 @@ var CC = {
             graphics: tool.graphics,
             text: tool.text,
             new: tool.new,
-            marquee: DATA.elems.curMarquee.attr("rel")
+            marquee: DATA.elems.curMarquee.data("id")
         }
 
-    },
-
-    addTextBox: function(firstCol, lastCol, firstRow, lastRow) {
-        //determine boundaries for the text box
     },
     addCC: function(ccData) {
         return $('<span>')
@@ -581,16 +709,16 @@ var CC = {
         if(elems==undefined) elems=$("#grid td.ui-selected");
         elems.each(function() {
             t = $(this);
-            col = t.attr("col");
-            cls = "col col" + col + " ui-selectee ui-selected";
+            col = t.data("col");
+            cls = "ui-selectee ui-selected";
             t
-                .attr({
+                .attr("class",cls)
+                .data({
                     color: "",
                     background: "",
                     foreground: "",
                     graphics: "",
                     text: "",
-                    "class":cls,
                     marquee: "",
                     new: ""
                 })
@@ -600,7 +728,10 @@ var CC = {
     }
 }
 
-var FUNCTIONS = {
+var FN = {
+    getCell: function(row,col) {
+        return DATA.$cells["cell" + row + "_" + col];
+    },
     getPxInt: function(i) {
         /* **********
          * return an integer from EG 20px
@@ -630,10 +761,10 @@ var FUNCTIONS = {
             hits = elem.collision($("#grid td")); 
         }
         return {
-            firstRow: parseInt(hits.eq(0).attr("row")),
-            lastRow: parseInt(hits.eq(hits.length-1).attr("row")),
-            firstCol: parseInt(hits.eq(0).attr("col")),
-            lastCol: parseInt(hits.eq(hits.length-1).attr("col")),
+            firstRow: parseInt(hits.eq(0).data("row")),
+            lastRow: parseInt(hits.eq(hits.length-1).data("row")),
+            firstCol: parseInt(hits.eq(0).data("col")),
+            lastCol: parseInt(hits.eq(hits.length-1).data("col")),
         }
     },
     getTDAttrs: function() {
@@ -643,6 +774,7 @@ var FUNCTIONS = {
             tdA.push("f-" + COLORS[i].sname);
         }
         tdA.push("graphics");
+        tdA.push("text");
         return tdA;
     }
 }

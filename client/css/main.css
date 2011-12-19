@@ -46,38 +46,8 @@
 .f-W {
   color: white; }
 
-/*
-    
-    oh + selector, y u so buggy?
-
-
-$td :"";
-@each $col in BK, R, G, Y, BL, M, C, W {
-    @for $i from 0 through 39 {
-        $td : buildTD($i);
-            #grid td.#{$col} + td.new #{$td} {
-                background-color: color($col);
-            }
-    }
-}
-
-*/
 body {
   position: relative; }
-
-textarea {
-  background: #000;
-  border: 0;
-  color: #fff;
-  font: normal 20px/20px ttx2;
-  overflow: hidden;
-  outline: none;
-  padding: 0;
-  position: absolute;
-  left: 0;
-  resize: none;
-  top: 0;
-  width: 640px; }
 
 #tools, #canvas {
   float: left; }
@@ -116,22 +86,42 @@ textarea {
   position: relative;
   width: 640px;
   z-index: 50; }
+  #canvas.preview div.marquee, #canvas.preview div.border {
+    border: none !important; }
+  #canvas.preview span.cc, #canvas.preview .ui-resizable-handle {
+    display: none !important; }
+  #canvas div.toolbar {
+    background: #ccc;
+    display: none;
+    height: 20px;
+    left: 0;
+    position: absolute;
+    top: -20px;
+    z-index: 100; }
   #canvas div.marquee {
     z-index: 50; }
+    #canvas div.marquee.collide div.border {
+      border-color: #f00 !important; }
     #canvas div.marquee div.border {
       border: 1px solid #333; }
     #canvas div.marquee.selected div.border {
       border: 1px dashed #fff; }
+    #canvas div.marquee.edit {
+      z-index: 49 !important; }
   #canvas table.grid {
     height: 500px;
     width: 640px;
     z-index: 50; }
     #canvas table.grid tr td {
+      color: #fff;
       float: left;
       position: relative;
+      font: normal 0.8 ttx2;
       height: 20px;
       width: 16px;
       z-index: 50; }
+      #canvas table.grid tr td.graphics {
+        font: normal 16px/20px ttx2gra; }
       #canvas table.grid tr td:hover {
         background-color: #fff; }
       #canvas table.grid tr td.ui-selecting {
@@ -144,12 +134,14 @@ textarea {
         color: #000; }
       #canvas table.grid tr td.collide {
         background-color: #f00; }
-      #canvas table.grid tr td span.cc {
-        background: #666;
-        display: block;
-        color: #eee;
-        font: normal 16px/20px ttx2gra;
-        height: 20px;
-        position: relative;
-        width: 16px;
-        z-index: 100; }
+      #canvas table.grid tr td.cc {
+        background-color: #000; }
+        #canvas table.grid tr td.cc span.cc {
+          background: #666;
+          display: block;
+          color: #eee;
+          font: normal 16px/20px ttx2gra;
+          height: 20px;
+          position: relative;
+          width: 16px;
+          z-index: 100; }
