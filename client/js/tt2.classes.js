@@ -5,7 +5,7 @@ COLORS = {
     	rgb: [255,  47,  21],
 		hex: "f00",
         sname: "R",
-        contrast: "ccc",
+        contrast: "dark",
         textCC: 129,
         graphicsCC: 145
     },
@@ -14,7 +14,7 @@ COLORS = {
     	rgb: [255, 253,  51],
 		hex: "ff0",
         sname: "Y",
-        contrast: "666",
+        contrast: "dark",
         textCC: 131,
         graphicsCC: 147
     },
@@ -23,7 +23,7 @@ COLORS = {
     	rgb: [  0,  39, 252],
 		hex: "00f",
         sname: "BL",
-        contrast: "ccc",
+        contrast: "light",
         textCC: 132,
         graphicsCC: 148
     },
@@ -32,7 +32,7 @@ COLORS = {
     	rgb: [255,  63, 253],
 		hex: "f0f",
         sname: "M",
-        contrast: "666",
+        contrast: "dark",
         textCC: 133,
         graphicsCC: 149
     },
@@ -41,7 +41,7 @@ COLORS = {
     	rgb: [  0, 250,  44],
 		hex: "0f0",
         sname: "G",
-        contrast: "666",
+        contrast: "dark",
         textCC: 130,
         graphicsCC: 146
     },
@@ -50,7 +50,7 @@ COLORS = {
     	rgb: [  0, 252, 255],
 		hex: "0ff",
         sname: "C",
-        contrast: "666",
+        contrast: "light",
         textCC: 134,
         graphicsCC: 150
     },
@@ -59,14 +59,14 @@ COLORS = {
     	rgb: [  0,   0,   0],
 		hex: "000",
         sname: 'BK',
-        contrast: "ccc"
+        contrast: "light"
     },
     white: {
     	name: "White",
     	rgb: [255, 255, 255],
 		hex: "fff",
         sname: "W",
-        contrast: "666",
+        contrast: "dark",
         textCC: 135,
         graphicsCC: 151
     }

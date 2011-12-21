@@ -31,20 +31,26 @@ $cblue: #00007f; //control color
     @if $col == "W" { @return $white; }
 } 
 
-@function buildTD($int) {
-    $td : "";
-    @for $i from 0 through $int {
-        $td : $td + " + td";
-    }
-    @return $td;
+@function cursor($col) {
+    @if $col == "BK" { @return "light"; }
+    @if $col == "R" { @return "light"; }
+    @if $col == "G" { @return "dark"; }
+    @if $col == "Y" { @return "dark"; }
+    @if $col == "BL" { @return "light"; }
+    @if $col == "M" { @return "light"; }
+    @if $col == "C" { @return "dark"; }
+    @if $col == "W" { @return "dark"; }
 }
 
 @each $col in BK, R, G, Y, BL, M, C, W {
     .#{$col} {
         background-color: color($col);
+        div#cursor {
+            background-image: url(../img/#{cursor($col)}_cursor.gif) !important;
+        }
     }
     .f-#{$col} {
-        color: color($col);
+        color: color($col) !important;
     }
 }
 
@@ -108,7 +114,14 @@ body {
     position: relative;
     width: $fw;
     z-index: 50;
- 
+    &.edit {
+        td.ui-selectee {
+            opacity: .8;
+        }
+        td.ui-selected {
+            opacity: 1 !important;
+        }
+    } 
     &.preview {
         div.marquee, div.border {
             border: none !important;
@@ -156,10 +169,18 @@ body {
                 color: #fff;
                 float: left;
                 position: relative;
-                font: normal $blockX/$blockY ttx2;
+                font: normal #{$blockX}/#{$blockY} ttx2;
                 height: $blockY;
                 width: $blockX;
                 z-index: 50;
+                div#cursor {
+                    background-image: url(../img/light_cursor.gif);
+                    left: 0;
+                    height: $blockY;
+                    position: absolute;
+                    top: 0;
+                    width: $blockX;
+                }
                 &.graphics {
                     font: normal #{$blockX}/#{$blockY} ttx2gra;
                 }
@@ -171,7 +192,7 @@ body {
                 }
 
                 &.ui-selected {
-                    //background-color: yellow;
+                    //background-color: yellow !important;
                     span.cc {
                         background: #eee;
                         color: #666;

@@ -1,50 +1,66 @@
 .BK {
   background-color: black; }
+  .BK div#cursor {
+    background-image: url(../img/light_cursor.gif) !important; }
 
 .f-BK {
-  color: black; }
+  color: black !important; }
 
 .R {
   background-color: red; }
+  .R div#cursor {
+    background-image: url(../img/light_cursor.gif) !important; }
 
 .f-R {
-  color: red; }
+  color: red !important; }
 
 .G {
   background-color: lime; }
+  .G div#cursor {
+    background-image: url(../img/dark_cursor.gif) !important; }
 
 .f-G {
-  color: lime; }
+  color: lime !important; }
 
 .Y {
   background-color: yellow; }
+  .Y div#cursor {
+    background-image: url(../img/dark_cursor.gif) !important; }
 
 .f-Y {
-  color: yellow; }
+  color: yellow !important; }
 
 .BL {
   background-color: blue; }
+  .BL div#cursor {
+    background-image: url(../img/light_cursor.gif) !important; }
 
 .f-BL {
-  color: blue; }
+  color: blue !important; }
 
 .M {
   background-color: fuchsia; }
+  .M div#cursor {
+    background-image: url(../img/light_cursor.gif) !important; }
 
 .f-M {
-  color: fuchsia; }
+  color: fuchsia !important; }
 
 .C {
   background-color: aqua; }
+  .C div#cursor {
+    background-image: url(../img/dark_cursor.gif) !important; }
 
 .f-C {
-  color: aqua; }
+  color: aqua !important; }
 
 .W {
   background-color: white; }
+  .W div#cursor {
+    background-image: url(../img/dark_cursor.gif) !important; }
 
 .f-W {
-  color: white; }
+  color: white !important; }
 
 body {
   position: relative; }
@@ -86,6 +102,10 @@ body {
   position: relative;
   width: 640px;
   z-index: 50; }
+  #canvas.edit td.ui-selectee {
+    opacity: .8; }
+  #canvas.edit td.ui-selected {
+    opacity: 1 !important; }
   #canvas.preview div.marquee, #canvas.preview div.border {
     border: none !important; }
   #canvas.preview span.cc, #canvas.preview .ui-resizable-handle {
@@ -116,10 +136,17 @@ body {
       color: #fff;
       float: left;
       position: relative;
-      font: normal 0.8 ttx2;
+      font: normal 16px/20px ttx2;
       height: 20px;
       width: 16px;
       z-index: 50; }
+      #canvas table.grid tr td div#cursor {
+        background-image: url(../img/light_cursor.gif);
+        left: 0;
+        height: 20px;
+        position: absolute;
+        top: 0;
+        width: 16px; }
       #canvas table.grid tr td.graphics {
         font: normal 16px/20px ttx2gra; }
       #canvas table.grid tr td:hover {
