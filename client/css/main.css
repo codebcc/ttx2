@@ -140,6 +140,8 @@ body {
       height: 20px;
       width: 16px;
       z-index: 50; }
+      #canvas table.grid tr td span.s {
+        display: none; }
       #canvas table.grid tr td div#cursor {
         background-image: url(../img/light_cursor.gif);
         left: 0;

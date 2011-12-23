@@ -249,6 +249,7 @@ var CANVAS = {
                     EL.curMarquee.addClass("empty");
                     MARQUEE.removeEmpties();
                     MARQUEE.setTDClasses({previousMarquee:true});
+                    MARQUEE.editMode.removeText();
                     tdSel.removeClass("ui-selected");
                 }
 
@@ -427,16 +428,13 @@ var MARQUEE = {
 
             CANVAS.loop({
                 marquee: true,
-                trFunction: function(tr) {
-
-                    //add a return character if it's not the first row
-                    if(tr.data().row>EL.curMarquee.data().pos.firstRow) text+="13;"
-                },
 
                 tdFunction: function(td) {
 
                     span = td.find("span.t");
-                    if(span.length>0) text+= span.text().charCodeAt() + ";";                     
+                    special = td.find("span.s");
+
+                    if(span.length>0) text += ((special.length>0) ? span.text() : span.text().charCodeAt()) + ";";
 
                 }
             });
@@ -449,27 +447,31 @@ var MARQUEE = {
             t = EL.curMarquee.data("text");
             if(!t) return false;
 
-            var textLines = t.split("13;");
-
-            var chars = [];
+            var words = t.split(" ");
+            //work out how many lines are needed
+            var chars = t.split(";");
             var charCount = lineCount = 0;
+            var hold = false;
 
             CANVAS.loop({
 
                 marquee: true,
                 firstCol: (EL.curMarquee.data().pos.firstCol + MARQUEE.toolOffset()),
-                lastRow: (textLines.length+EL.curMarquee.data().pos.firstRow-1),
+                lastRow: (EL.curMarquee.data().pos.lastRow),
                     
                 trFunction: function(tr) {
-                    chars = (textLines[lineCount]) ? textLines[lineCount].split(";") : "";
-                    charCount=0;
-                    lineCount++;
+                    hold = false;
                 },
 
+
                 tdFunction: function(td) {
-                                    
+
                     if(charCount<chars.length) {
-                        td.append(EDIT.textSpan(String.fromCharCode(chars[charCount])));
+                        if(chars[charCount]==13) {
+                            hold=true; //return character
+                            td.append(EDIT.textSpan(13, "special"));
+                        }
+                        if(!hold) td.append(EDIT.textSpan(String.fromCharCode(chars[charCount])));
                     }
 
                     charCount++;
@@ -488,7 +490,9 @@ var MARQUEE = {
     setTDClasses: function(o) {
 
         CANVAS.loop($.extend({
+
             fullWidth: true, 
+
             trFunction: function() {
 
                 DATA.rowData = {};
@@ -537,6 +541,7 @@ var MARQUEE = {
             zIndex: 50,
             stop: function(e,ui) {
                 if(e.type=="resizestop") {
+                    //revert to original size if collision was detected
                     if(EL.curMarquee.hasClass("collide")) {
                         EL.curMarquee
                             .css({
@@ -547,12 +552,15 @@ var MARQUEE = {
 
                         MARQUEE.setBorder();
                         FN.help("");
+
                         return false;
                     } 
                 }
                 MARQUEE.editMode.removeText(DATA.previousSelection);
                 CC.removeSelected(DATA.previousSelection);
                 MARQUEE.markSelectedBlocks();
+                //remove overflowing text
+                if(ui.originalSize) if(ui.originalSize.height<EL.curMarquee.height()) MARQUEE.editMode.removeText();
                 MARQUEE.updatePosition(); //because snapping is buggy :(
                 CC.init();
                 rr = MARQUEE.getEventRowRange();
@@ -646,8 +654,10 @@ var MARQUEE = {
                         
     },
     getEventRowRange: function() {
+
         cData = EL.curMarquee.data().pos;
         pData = DATA.previousAttrs;
+
         firstRow = (cData.firstRow<=pData.firstRow) ? cData.firstRow : pData.firstRow;
         lastRow = (cData.lastRow>=pData.lastRow) ? cData.lastRow : pData.lastRow;
 
@@ -1001,13 +1011,28 @@ var EDIT = {
                 marqueeEdit = (EL.curMarquee) ? EL.curMarquee.hasClass("edit") : false;
                 lastCol = marqueeEdit ? marqueeData.pos.lastCol : DATA.cols;
                 firstCol = marqueeEdit ? (marqueeData.pos.firstCol + MARQUEE.toolOffset()) : 1;
+                lastRow = (marqueeData) ? marqueeData.pos.lastRow : DATA.rows;
 
                 curData = EL.cursor.data("pos").data();
-                nextRow = (curData.col<lastCol) ? (curData.row) : ((curData.row<DATA.rows) ? (curData.row+1) : curData.row);
-                nextCol = (curData.col<lastCol) ? (curData.col+1) : ((curData.row<DATA.rows) ? firstCol : (curData.col));
-                nextCell = FN.getCell(nextRow,nextCol);
+                lastColCell = FN.getCell(curData.row,lastCol);
+                nextRow = (curData.col<lastCol) ? (curData.row) : ((curData.row<marqueeData.pos.lastRow) ? (curData.row+1) : curData.row);
+                nextCol = (curData.col<lastCol) ? (curData.col+1) : ((curData.row<marqueeData.pos.lastRow) ? firstCol : (curData.col));
+                var nextCell = FN.getCell(nextRow,nextCol);
 
-                EDIT.cursor.remove();
+                if(nextRow>curData.row) {
+
+                    //we're going down a row                    
+                    //check if we need to bring a word with us
+                    if(DATA.newWord) {
+
+
+                        EDIT.cut(DATA.newWord, lastColCell);
+                        nextCell = EDIT.paste(nextCell);
+
+                        DATA.newWord = false;
+                    }
+                
+                }
 
                 EDIT.cursor.init(nextCell);
 
@@ -1015,10 +1040,76 @@ var EDIT = {
 
         },
 
-        newLine: function() {}
+
+
+        newLine: function(td) {
+            
+            ch = EDIT.textSpan("13", "special");
+            td.append(ch);
+
+            curData = EL.cursor.data("pos").data();
+            marqueeData = EL.curMarquee.data();
+
+            nextRow = (curData.row<marqueeData.pos.lastRow) ? (curData.row+1) : curData.row;
+            nextCol = MARQUEE.toolOffset() + EL.curMarquee.data().pos.firstCol;
+
+            nextCell = FN.getCell(nextRow,nextCol);
+
+            EDIT.cursor.init(nextCell);
+
+        }
 
 
     },
+
+    cut: function(start,end) {
+
+        sPos = start.data();
+        ePos = end.data();
+
+        firstCol = sPos.col+1;
+        lastCol = ePos.col;
+        firstRow = sPos.row;
+        lastRow = ePos.row;
+
+        var $spans = [];
+
+        CANVAS.loop({
+            firstCol: firstCol,
+            lastCol: lastCol,
+            firstRow: firstRow,
+            lastRow: lastRow,
+
+            tdFunction: function(td) {
+                span = td.find("span.t");
+                $spans.push(span);
+                span.remove();
+            }
+
+        })
+
+        DATA.clipBoard = $($spans);
+
+    },
+
+    paste: function(cell) {
+
+        col = cell.data().col;
+        row = cell.data().row;
+
+        var cell = cell;
+
+        if(DATA.clipBoard) {
+            DATA.clipBoard.each(function() {
+                t = $(this);
+                cell = FN.getCell(row, col++);
+                cell.append(t);
+            });
+
+            return FN.getCell(row, col++);
+        }
+    },
+
     keys: {
         
         init: function() {
@@ -1028,17 +1119,24 @@ var EDIT = {
             $(document).keypress(function(e) {
 
                 key = (String.fromCharCode(e.charCode));
+                td = EL.cursor.data("pos");
+                td.find("span.t").remove();
 
+                if(e.charCode==32) {
+                    //space
+                    DATA.newWord= td;
+
+                }
                 if(e.charCode==13) {
-
-                    EDIT.cursor.newLine();
-
+                    //return
+                    EDIT.cursor.newLine(td);
+                
                 } else if(DATA.chars.indexOf(key)>-1) {
+
                     ch = EDIT.textSpan(key);
-                    td = EL.cursor.data("pos");
-                    td.find("span.t").remove();
                     td.append(ch); 
                     EDIT.cursor.move.forward();
+
                 }
 
                 return false;
@@ -1054,18 +1152,10 @@ var EDIT = {
 
     },
 
-    addTextData: function(key) {
+    textSpan: function(key, special) {
 
-        t = EL.curMarquee.data("text");
-        EL.curMarquee.data("text", (t+key));
-
-    },
-
-    textSpan: function(key) {
-
-        return $('<span class="t"/>').text(key);
+        return $('<span class="t"/>').addClass(special ? "s": "").text(key);
 
     }
-
 
 }

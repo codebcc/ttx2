@@ -173,6 +173,9 @@ body {
                 height: $blockY;
                 width: $blockX;
                 z-index: 50;
+                span.s {
+                    display: none; 
+                }
                 div#cursor {
                     background-image: url(../img/light_cursor.gif);
                     left: 0;
