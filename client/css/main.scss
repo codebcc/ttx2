@@ -62,6 +62,7 @@ $cblue: #00007f; //control color
 // **********
 
 body {
+    padding-top: 40px;
     position: relative;
 }
 
@@ -110,7 +111,6 @@ body {
     background: #000;
     height: $fh;
     margin-right: 20px;
-    margin-top: 40px;
     position: relative;
     width: $fw;
     z-index: 50;

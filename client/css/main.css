@@ -63,6 +63,7 @@
   color: white !important; }
 
 body {
+  padding-top: 40px;
   position: relative; }
 
 #tools, #canvas {
@@ -98,7 +99,6 @@ body {
   background: #000;
   height: 500px;
   margin-right: 20px;
-  margin-top: 40px;
   position: relative;
   width: 640px;
   z-index: 50; }

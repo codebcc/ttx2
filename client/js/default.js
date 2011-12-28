@@ -16,7 +16,8 @@ var DATA = {
     blockY: 20,
     textBoxCount: 1,
     marqueeCount: 0,
-    chars: " `1234567890-=qwertyuiop[]\asdfghjkl;'zxcvbnm''./ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+    clipboard: {},
+    chars: " `!@#$%^&*()_+{}|:<>?,1234567890-=qwertyuiop[]\asdfghjkl;'zxcvbnm''./ABCDEFGHIJKLMNOPQRSTUVWXYZ",
     $cells: {},
     $rows: {},
     ccAttrs: ["background","color","foreground","text","graphics","new"],
@@ -150,8 +151,8 @@ var TOOLS = {
 
         EL.curMarquee.data('tools',DATA.tools);
 
-
         MARQUEE.setTDClasses({marquee:true});
+        MARQUEE.activate();
 
     }
 }
@@ -187,6 +188,8 @@ var CANVAS = {
                                 if(!t.data("marquee")) {
                                     MARQUEE.editMode.cancel();
                                     MARQUEE.deactivate();
+                                } else {
+                                    EDIT.tdClick($(this));
                                 }
                                 EDIT.cursor.init(t);
                             })
@@ -237,7 +240,7 @@ var CANVAS = {
 
         //Marquee mode
         
-        $(document).jkey('backspace', function() {
+        $(document).jkey('backspace,delete', function() {
 
             
             if($("div.marquee.edit").length<1) {
@@ -295,15 +298,39 @@ var CANVAS = {
             settings.lastCol = DATA.cols;
         }
         
+        if(settings.inclusive) {
+            var endCol = settings.lastCol;
+            settings.lastCol = DATA.cols;
+            settings.lastRow = DATA.rows;     
+        }
+
         for(i=settings.firstRow;i<=settings.lastRow;i++) {
 
             tr = $("#row" + i);
+
+            if(settings.inclusive) {
+               if((i>settings.firstRow) && (i<settings.lastRow)) {
+                   settings.firstCol = posData.firstCol;
+                   settings.lastCol = posData.lastCol;
+               }
+               if((i==settings.lastRow) && (!settings.until)) {
+                    settings.lastCol = endCol; 
+               }
+            }
+
 
             if(settings.trFunction) settings.trFunction(tr,i)
 
             for(j=settings.firstCol;j<=settings.lastCol;j++) {
 
+
+                if(settings.until) if(settings.until()) {
+                    return td;
+                    break;
+                }
+
                 td = FN.getCell(i,j);
+
                 if(settings.tdFunction) settings.tdFunction(td,j);
 
             }
@@ -447,34 +474,49 @@ var MARQUEE = {
             t = EL.curMarquee.data("text");
             if(!t) return false;
 
-            var words = t.split(" ");
             //work out how many lines are needed
             var chars = t.split(";");
-            var charCount = lineCount = 0;
+            chars.push("32"); //add a space to the end to help wrapping
+            var charPos = lineCount = rowFirstChar = 0;
             var hold = false;
 
             CANVAS.loop({
 
                 marquee: true,
                 firstCol: (EL.curMarquee.data().pos.firstCol + MARQUEE.toolOffset()),
-                lastRow: (EL.curMarquee.data().pos.lastRow),
                     
                 trFunction: function(tr) {
-                    hold = false;
+                    //check if this word will fit
+                    if(hold) {
+                        hold = false;
+                        charPos++;
+                    }
+                    
+                    rowFirstChar = charPos;
                 },
 
 
                 tdFunction: function(td) {
 
-                    if(charCount<chars.length) {
-                        if(chars[charCount]==13) {
-                            hold=true; //return character
-                            td.append(EDIT.textSpan(13, "special"));
-                        }
-                        if(!hold) td.append(EDIT.textSpan(String.fromCharCode(chars[charCount])));
-                    }
+                    if(charPos<chars.length) {
+                        if(chars[charPos]==13) { //newline
 
-                    charCount++;
+                            hold=true;
+                            td.append(EDIT.textSpan(13, "special"));
+
+                        } else if(chars[charPos]==32) { //space!
+                            //dont start a line with a space
+                            if(td.data("col")==MARQUEE.firstColOffset()) charPos++;
+
+                            //wrap words that are too long to fit on this line
+                            nextSpace = chars.indexOf("32",(charPos+1));
+                            if((td.data("col")+(nextSpace-charPos)-1)>EL.curMarquee.data().pos.lastCol) hold=true;
+                        }
+                        if(!hold) {
+                            td.append(EDIT.textSpan(String.fromCharCode(chars[charPos])));
+                            charPos++;
+                        }
+                    }
 
                 }
             });
@@ -608,6 +650,8 @@ var MARQUEE = {
 
     },
     activate: function(marquee) {
+
+        if(!marquee) marquee = EL.curMarquee;
 
         if($("div.edit").length>0) MARQUEE.editMode.cancel();
 
@@ -747,6 +791,10 @@ var MARQUEE = {
         cmd = EL.curMarquee.data();
         if(!cmd) return 0;
         return (cmd.tools) ? cmd.tools.length : 0;
+    },
+    firstColOffset: function() {
+        if(!EL.curMarquee.data()) return false;
+        return (MARQUEE.toolOffset() + EL.curMarquee.data().pos.firstCol);
     }
 }
 
@@ -988,6 +1036,20 @@ var FN = {
 
 var EDIT = {
 
+    tdClick: function(t) {
+        
+        curData = EL.curMarquee.data("pos");
+        //set new word to last space if one exists
+        $spans = $("#grid #row" + t.data("row") + " td:lt(" + t.data("col") + "):gt(" + curData.firstCol + ") span.t");
+        $spans.each(function() {
+            t = $(this);
+             console.log(t.text()==" ");
+            if(t.text()==" ") DATA.newWord = ($spans.index(t));
+        })
+        DATA.newWord = false;
+
+    },
+
     cursor: {
 
         init: function(td) {
@@ -999,22 +1061,36 @@ var EDIT = {
             EDIT.keys.init();
         },
 
+
+
         remove: function() {
             $("#cursor").remove();
         },
 
-        move: {
+        move: function(o) {
 
-            forward: function() {
+            var dir = o.direction; 
 
-                if(EL.curMarquee) marqueeData = EL.curMarquee.data();
-                marqueeEdit = (EL.curMarquee) ? EL.curMarquee.hasClass("edit") : false;
-                lastCol = marqueeEdit ? marqueeData.pos.lastCol : DATA.cols;
-                firstCol = marqueeEdit ? (marqueeData.pos.firstCol + MARQUEE.toolOffset()) : 1;
-                lastRow = (marqueeData) ? marqueeData.pos.lastRow : DATA.rows;
+            var places = o.places ? o.places : 1;
 
-                curData = EL.cursor.data("pos").data();
-                lastColCell = FN.getCell(curData.row,lastCol);
+            if(EL.curMarquee) var marqueeData = EL.curMarquee.data();
+            var marqueeEdit = (EL.curMarquee) ? EL.curMarquee.hasClass("edit") : false;
+            var lastCol = marqueeEdit ? marqueeData.pos.lastCol : DATA.cols;
+            var firstCol = marqueeEdit ? (marqueeData.pos.firstCol + MARQUEE.toolOffset()) : 1;
+            var lastRow = (marqueeData) ? marqueeData.pos.lastRow : DATA.rows;
+
+            curData = EL.cursor.data("pos").data();
+            lastColCell = FN.getCell(curData.row,lastCol);                
+
+            if(dir=="backward") {
+                
+                nextRow = (curData.col>firstCol) ? (curData.row) : ((curData.row>marqueeData.pos.firstRow) ? (curData.row-1) : curData.row);
+                nextCol = (curData.col>firstCol) ? (curData.col-1) : ((curData.row>marqueeData.pos.firstRow) ? lastCol : (curData.col));
+                var nextCell = FN.getCell(nextRow,nextCol);
+
+            } else if(dir=="forward") {
+
+
                 nextRow = (curData.col<lastCol) ? (curData.row) : ((curData.row<marqueeData.pos.lastRow) ? (curData.row+1) : curData.row);
                 nextCol = (curData.col<lastCol) ? (curData.col+1) : ((curData.row<marqueeData.pos.lastRow) ? firstCol : (curData.col));
                 var nextCell = FN.getCell(nextRow,nextCol);
@@ -1023,20 +1099,42 @@ var EDIT = {
 
                     //we're going down a row                    
                     //check if we need to bring a word with us
-                    if(DATA.newWord) {
+                    if(DATA.newWord!=undefined) {
 
 
                         EDIT.cut(DATA.newWord, lastColCell);
-                        nextCell = EDIT.paste(nextCell);
+                        if(DATA.clipboard.copy.length>0) {
+                            nextCell = EDIT.paste(nextCell);
+                            nextCell = FN.getCell(nextCell.data("row"),(nextCell.data("col")+1));
+                        }
 
                         DATA.newWord = false;
+
                     }
                 
                 }
 
-                EDIT.cursor.init(nextCell);
-
+            } else if(o.arrow) {
+                if(dir=="up") {
+                    nextRow = (curData.row>marqueeData.pos.firstRow) ? (curData.row-1) : curData.row;
+                    nextCol = curData.col;    
+                } else if (dir=="down") {
+                    nextRow = (curData.row<marqueeData.pos.lastRow) ? (curData.row+1) : curData.row;
+                    nextCol = curData.col;   
+                } else if (dir=="left") {
+                    nextRow = curData.row;
+                    nextCol = (curData.col>(marqueeData.pos.firstCol+MARQUEE.toolOffset())) ? (curData.col-1) : curData.col;
+                } else if (dir=="right") {
+                    nextRow = curData.row;
+                    nextCol = (curData.col<(marqueeData.pos.lastCol)) ? (curData.col+1) : curData.col;
+                }
+                nextCell = FN.getCell(nextRow,nextCol);
             }
+
+            if(o.delete) nextCell.find("span.t").remove();
+
+            EDIT.cursor.init(nextCell);
+
 
         },
 
@@ -1088,25 +1186,38 @@ var EDIT = {
 
         })
 
-        DATA.clipBoard = $($spans);
+        DATA.clipboard.copy = $($spans);
 
     },
 
     paste: function(cell) {
 
-        col = cell.data().col;
-        row = cell.data().row;
+        var col = cell.data().col;
+        var row = cell.data().row;
 
-        var cell = cell;
+        var clipPos = 0;
 
-        if(DATA.clipBoard) {
-            DATA.clipBoard.each(function() {
-                t = $(this);
-                cell = FN.getCell(row, col++);
-                cell.append(t);
+        var td_;
+
+        if(DATA.clipboard.copy) {
+
+            CANVAS.loop({
+                
+                firstCol: col,
+                firstRow: row,
+                inclusive: true,
+                until: function() {
+                   return (clipPos>=DATA.clipboard.copy.length);
+                },
+                tdFunction: function(td) {
+                    t = DATA.clipboard.copy[clipPos];
+                    td.append(t);
+                    td_ = td;
+                    clipPos++;
+                }
             });
 
-            return FN.getCell(row, col++);
+            return td_;
         }
     },
 
@@ -1117,7 +1228,6 @@ var EDIT = {
             if($(document).data("events").keypress) return false;
 
             $(document).keypress(function(e) {
-
                 key = (String.fromCharCode(e.charCode));
                 td = EL.cursor.data("pos");
                 td.find("span.t").remove();
@@ -1135,12 +1245,29 @@ var EDIT = {
 
                     ch = EDIT.textSpan(key);
                     td.append(ch); 
-                    EDIT.cursor.move.forward();
+                    EDIT.cursor.move({direction:"forward"});
 
                 }
 
                 return false;
             });
+
+            $(document).jkey('backspace', function() {
+
+                
+                if($("div.marquee.edit").length>0) {
+
+                    EDIT.cursor.move({
+                        direction: "backward",
+                        delete: true
+                    })
+
+                }
+
+            }).jkey('up,down,left,right', function(e) {
+                EDIT.cursor.move({direction:e,arrow:true});
+            });
+
 
         },
 
