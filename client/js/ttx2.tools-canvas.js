@@ -1,39 +1,3 @@
-$(document).ready(function () {
-    EL = $.extend(EL, {
-        canvas: $("#canvas"),
-        tools: $("#tools")
-    });
-    DATA.FN.getPostLoadData();
-    TOOLS.build();
-    CANVAS.build();
-    CANVAS.keys();
-});
-
-var DATA = {
-	cols: 40,
-	rows: 25,
-    blockX: 16,
-    blockY: 20,
-    textBoxCount: 1,
-    marqueeCount: 0,
-    clipboard: {},
-    chars: " `!@#$%^&*()_+{}|:<>?,1234567890-=qwertyuiop[]\asdfghjkl;'zxcvbnm''./ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-    $cells: {},
-    $rows: {},
-    ccAttrs: ["background","color","foreground","text","graphics","new"],
-    FN: {
-        getPostLoadData: function() {
-            DATA = $.extend(DATA, {
-                tdAttrs: FN.getTDAttrs(),
-                canvasHeight: (DATA.blockY *  DATA.cols),
-                canvasWidth: (DATA.blockX * DATA.rows)
-            });
-
-        }
-    }
-}
-
-var EL = {}
 
 var TOOLS = {
 
@@ -256,11 +220,7 @@ var CANVAS = {
                     tdSel.removeClass("ui-selected");
                 }
 
-            } else {
-
-                
             }
-
 
         });
 
@@ -270,6 +230,8 @@ var CANVAS = {
 
         //loop through specified cells and perform a function
         settings = {};
+
+        if((EL.curMarquee.length>0) && (!EL.curMarquee.hasClass("empty"))) opts.marquee = true;
 
         if(opts.marquee) {
 
@@ -290,7 +252,6 @@ var CANVAS = {
                 lastCol: DATA.lastCol,
                 firstCol: DATA.firstCol 
             }, opts);
-
         }
        
         if(settings.fullWidth) {
@@ -298,11 +259,8 @@ var CANVAS = {
             settings.lastCol = DATA.cols;
         }
         
-        if(settings.inclusive) {
-            var endCol = settings.lastCol;
-            settings.lastCol = DATA.cols;
-            settings.lastRow = DATA.rows;     
-        }
+        if(settings.inclusive) var endCol = settings.lastCol;
+
 
         for(i=settings.firstRow;i<=settings.lastRow;i++) {
 
@@ -310,11 +268,15 @@ var CANVAS = {
 
             if(settings.inclusive) {
                if((i>settings.firstRow) && (i<settings.lastRow)) {
-                   settings.firstCol = posData.firstCol;
+                   settings.firstCol = MARQUEE.firstColOffset();
                    settings.lastCol = posData.lastCol;
+               }
+               if(i==settings.firstRow) {
+                    settings.lastCol = posData.lastCol; 
                }
                if((i==settings.lastRow) && (!settings.until)) {
                     settings.lastCol = endCol; 
+                    if(settings.lastRow!=settings.firstRow) settings.firstCol = MARQUEE.firstColOffset();
                }
             }
 
@@ -323,13 +285,12 @@ var CANVAS = {
 
             for(j=settings.firstCol;j<=settings.lastCol;j++) {
 
-
                 if(settings.until) if(settings.until()) {
                     return td;
                     break;
                 }
 
-                td = FN.getCell(i,j);
+                td = CELL.getCell({row:i,col:j,ignoreMarquee:true});
 
                 if(settings.tdFunction) settings.tdFunction(td,j);
 
@@ -416,6 +377,7 @@ var MARQUEE = {
             EL.curToolbar.show();
             DATA.editMode = true;
             MARQUEE.editMode.setCursorPosition();
+            EL.curMarquee.removeClass("empty");
 
         },
 
@@ -425,6 +387,7 @@ var MARQUEE = {
             EL.curToolbar.hide();
             EDIT.cursor.remove();
             DATA.editMode = false;
+            if(EL.curMarquee.find("span.t").length<1) EL.curMarquee.addClass("empty");
             MARQUEE.editMode.storeTextData();
         },
 
@@ -438,7 +401,7 @@ var MARQUEE = {
         setCursorPosition: function() {
             data = EL.curMarquee.data();
             if(!data.editMode.cursorPos) {
-                td = FN.getCell(data.pos.firstRow,(data.pos.firstCol + MARQUEE.toolOffset()));
+                td = CELL.getCell({row:data.pos.firstRow,col:(data.pos.firstCol + MARQUEE.toolOffset())});
             }
             if(DATA.editMode) {
                 EDIT.cursor.init(td);
@@ -469,12 +432,14 @@ var MARQUEE = {
             EL.curMarquee.data("text",text);
         },
 
-        drawText: function() {
+        drawText: function(o) {
 
-            t = EL.curMarquee.data("text");
+            if(!o) o = {};
+
+            t = o.insert ? DATA.clipboard.insert : EL.curMarquee.data("text");
+
             if(!t) return false;
 
-            //work out how many lines are needed
             var chars = t.split(";");
             chars.push("32"); //add a space to the end to help wrapping
             var charPos = lineCount = rowFirstChar = 0;
@@ -483,7 +448,9 @@ var MARQUEE = {
             CANVAS.loop({
 
                 marquee: true,
-                firstCol: (EL.curMarquee.data().pos.firstCol + MARQUEE.toolOffset()),
+                firstCol: o.insert ? EL.cursor.parent().data().col : MARQUEE.firstColOffset(),
+                firstRow: o.insert ? EL.cursor.parent().data().row : EL.curMarquee.data().pos.firstRow,
+                inclusive: o.insert,
                     
                 trFunction: function(tr) {
                     //check if this word will fit
@@ -511,6 +478,7 @@ var MARQUEE = {
                             //wrap words that are too long to fit on this line
                             nextSpace = chars.indexOf("32",(charPos+1));
                             if((td.data("col")+(nextSpace-charPos)-1)>EL.curMarquee.data().pos.lastCol) hold=true;
+
                         }
                         if(!hold) {
                             td.append(EDIT.textSpan(String.fromCharCode(chars[charPos])));
@@ -796,493 +764,4 @@ var MARQUEE = {
         if(!EL.curMarquee.data()) return false;
         return (MARQUEE.toolOffset() + EL.curMarquee.data().pos.firstCol);
     }
-}
-
-var CC = {
-
-    init: function() {
-
-        //*** Determine what control characters are required
-
-        //make an array of selected tools
-        
-        selectedTools = $("#tools li.selected");
-
-        var tools = []; //will hold data about our selected tools
-        DATA.ccArr = new Array(); //array of control characters
-
-        if(selectedTools.length==0) {
-
-            DATA.tools = [];
-            CC.addToGrid();
-            return false;            
-        }
-
-        DATA.blackBGLeftEdge = false; //black BG at left edge has no control character
-        DATA.blackBGNotLeftEdge = false; //black BG not at left edge has one less control character
-        DATA.whiteTextLeftEdge = false; //white text at left edge has no control character
-
-        DATA.atLeftEdge = CC.checkLeftEdge(); //are we at the left edge?
-
-        selectedTools.each(function(i) {
-            t = $(this);
-            toolset = t.parents("div.toolset");
-            tools[i] = {
-                background:     toolset.data("background"),
-                foreground:     toolset.data("foreground"),
-                text:           toolset.data("text"),
-                graphics:       toolset.data("graphics"),
-                color:          t.data("color") ? COLORS[t.data("color")] : false,
-                cc:             ccs[t.attr("cc")]
-            }
-
-
-            //the default text color is white and default background color is black so
-            //we don't need control characters if these are selected AND we're at the left edge
-            //
-            //if black is the background color and we're not at the left edge we'll need one less control character
-
-            if(DATA.atLeftEdge) {
-                if(!DATA.whiteTextLeftEdge) DATA.whiteTextLeftEdge = (tools[i].text && (tools[i].color.name=="White"));
-                if(!DATA.blackBGLeftEdge) DATA.blackBGLeftEdge = (tools[i].background && (tools[i].color.name=="Black"));
-            }
-
-            if(!DATA.blackBGNotLeftEdge) DATA.blackBGNotLeftEdge = (tools[i].background && (tools[i].color.name=="Black"));
-
-        });
-
-
-        //first determine if a background tool was used that needs a special 'new background' tool
-        for(i in tools) {
-            if(tools[i].background && !DATA.blackBGLeftEdge) {
-                arrStart = tools.slice(0,(i+1));
-                arrStart.push({new: "new", cc: ccs["b_n"]});
-                arrEnd = tools.slice((i+1),tools.length);
-                tools = arrStart.concat(arrEnd); 
-            }
-        }
-
-        //determine what CCs are needed
-        for(i in tools) {
-            tool = tools[i];
-            if(tool.foreground) CC.addFG(tool);
-            if(tool.background) CC.addBG(tool);
-            if(tool.new) CC.addNewBG(tool);
-        }
-
-        DATA.tools = tools;
-
-        //check marquee is big enough to hold the CCs
-        ccLen = DATA.ccArr.length;
-        if(FN.getCSSInt("width",EL.curMarquee) < (ccLen*DATA.blockX)) {
-            FN.help("Marquee too small");
-        } else {
-            FN.help("");
-            //add our CCs to the grid
-            if(tools.length>0) CC.addToGrid();
-        }
-
-    },
-    addBG: function(tool) {
-        //background is a text color CC followed by a new background CC
-        if(!DATA.blackBGLeftEdge) {
-            //a background color is a foreground color followed by a 'new background' character
-            if(!DATA.blackBGNotLeftEdge) DATA.ccArr.push(tool.cc); //specifiy BG color if it's not black
-        }
-    },
-    addNewBG: function(tool) {
-        DATA.ccArr.push(tool.cc);
-    },
-    addFG: function(tool) {
-        if(!DATA.whiteTextLeftEdge) DATA.ccArr.push(tool.cc);
-    },
-    checkLeftEdge: function() {
-        //is our selection touching the left edge?
-        return ($("#grid td#cell1_1.ui-selected").length>0);
-    },
-    addToGrid: function() {
-
-        EL.curMarquee.removeClass("empty");
-
-        cr = FN.getCellsRange($("#grid td.ui-selected"));
-
-        //delete any CCs covered by this selection
-        CC.removeSelected();
-
-        atRightEdge = ($("#grid td.col40.ui-selected").length>0);
-
-        //add CCs to the grid
-        for(i = cr.firstRow; i<=cr.lastRow; i++) {
-
-            for(j in DATA.ccArr) {
-
-                j = parseInt(j);
-
-                //add CC data to the grid
-                thisCol = FN.getCell(i,(cr.firstCol+j));
-
-                CC.addCCTD(thisCol, DATA.tools[j], DATA.ccArr[j]);
-            }
-        }
-
-    },
-    addNewBg: function(td) {
-        CC.addCCTD(td, {background: "background", color: COLORS["black"], new: "new"}, ccs["b_bk"]);
-    },
-    addCCTD: function(td, toolObj, cc) {
-
-        if(toolObj==undefined) return false;
-        td
-            .addClass("cc")
-            .find("span.cc").remove().end()
-            .append(CC.addCC(cc))
-            .data((toolObj) ? CC.addData(toolObj) : "")
-
-    },
-    addData: function(tool) {
-        if(tool==undefined) return {};
-        color = (tool.color) ? tool.color.name.toLowerCase() : "";
-        return {
-            color: color,
-            background: tool.background,
-            foreground: tool.foreground,
-            graphics: tool.graphics,
-            text: tool.text,
-            new: tool.new,
-            marquee: EL.curMarquee.data("id")
-        }
-
-    },
-    addCC: function(ccData) {
-        return $('<span>')
-                .text(String.fromCharCode(parseInt(ccData.unicode.toLowerCase(), 16)))
-                .attr({
-                    "class": "cc"
-                });
-    },
-    removeSelected: function(elems) {
-        if(elems==undefined) elems=$("#grid td.ui-selected");
-        elems.each(function() {
-            t = $(this);
-            col = t.data("col");
-            cls = "ui-selectee ui-selected";
-            t
-                .attr("class",cls)
-                .data({
-                    color: "",
-                    background: "",
-                    foreground: "",
-                    graphics: "",
-                    text: "",
-                    marquee: "",
-                    new: ""
-                })
-                .find("span.cc").remove()
-
-        });
-    }
-}
-
-var FN = {
-    getCell: function(row,col) {
-        return DATA.$cells["cell" + row + "_" + col];
-    },
-    getPxInt: function(i) {
-        /* **********
-         * return an integer from EG 20px
-         ********** */
-        if(i==undefined) return 0;
-        i = parseInt(i.substring(0, (i.length-2)));
-        if(i.isNaN) i=0;
-        return i;
-    },
-    getCSSInt: function(css, elem) {
-        return parseInt(elem.css(css));
-    },
-    help: function(txt) {
-        $("#help").text(txt);
-    },
-    roundToRow: function(x) {
-        return Math.round(x / DATA.blockY)*DATA.blockY;
-    },
-    roundToCol: function(x) {
-        return Math.round(x / DATA.blockX)*DATA.blockX;
-    },
-    getCellsRange: function(elem) {
-        //return the rows covered by element or elements
-        if(elem.hasClass("ui-selected")) {
-            hits = elem;
-        } else {
-            hits = elem.collision($("#grid td")); 
-        }
-        return {
-            firstRow: parseInt(hits.eq(0).data("row")),
-            lastRow: parseInt(hits.eq(hits.length-1).data("row")),
-            firstCol: parseInt(hits.eq(0).data("col")),
-            lastCol: parseInt(hits.eq(hits.length-1).data("col")),
-        }
-    },
-    getTDAttrs: function() {
-        tdA = new Array();
-        for(i in COLORS) {
-            tdA.push(COLORS[i].sname);
-            tdA.push("f-" + COLORS[i].sname);
-        }
-        tdA.push("graphics");
-        tdA.push("text");
-        return tdA;
-    }
-}
-
-var EDIT = {
-
-    tdClick: function(t) {
-        
-        curData = EL.curMarquee.data("pos");
-        //set new word to last space if one exists
-        $spans = $("#grid #row" + t.data("row") + " td:lt(" + t.data("col") + "):gt(" + curData.firstCol + ") span.t");
-        $spans.each(function() {
-            t = $(this);
-             console.log(t.text()==" ");
-            if(t.text()==" ") DATA.newWord = ($spans.index(t));
-        })
-        DATA.newWord = false;
-
-    },
-
-    cursor: {
-
-        init: function(td) {
-            EDIT.cursor.remove();
-            td.append(
-                $('<div id="cursor"/>').data("pos",td)
-            )
-            EL.cursor = $("#cursor");
-            EDIT.keys.init();
-        },
-
-
-
-        remove: function() {
-            $("#cursor").remove();
-        },
-
-        move: function(o) {
-
-            var dir = o.direction; 
-
-            var places = o.places ? o.places : 1;
-
-            if(EL.curMarquee) var marqueeData = EL.curMarquee.data();
-            var marqueeEdit = (EL.curMarquee) ? EL.curMarquee.hasClass("edit") : false;
-            var lastCol = marqueeEdit ? marqueeData.pos.lastCol : DATA.cols;
-            var firstCol = marqueeEdit ? (marqueeData.pos.firstCol + MARQUEE.toolOffset()) : 1;
-            var lastRow = (marqueeData) ? marqueeData.pos.lastRow : DATA.rows;
-
-            curData = EL.cursor.data("pos").data();
-            lastColCell = FN.getCell(curData.row,lastCol);                
-
-            if(dir=="backward") {
-                
-                nextRow = (curData.col>firstCol) ? (curData.row) : ((curData.row>marqueeData.pos.firstRow) ? (curData.row-1) : curData.row);
-                nextCol = (curData.col>firstCol) ? (curData.col-1) : ((curData.row>marqueeData.pos.firstRow) ? lastCol : (curData.col));
-                var nextCell = FN.getCell(nextRow,nextCol);
-
-            } else if(dir=="forward") {
-
-
-                nextRow = (curData.col<lastCol) ? (curData.row) : ((curData.row<marqueeData.pos.lastRow) ? (curData.row+1) : curData.row);
-                nextCol = (curData.col<lastCol) ? (curData.col+1) : ((curData.row<marqueeData.pos.lastRow) ? firstCol : (curData.col));
-                var nextCell = FN.getCell(nextRow,nextCol);
-
-                if(nextRow>curData.row) {
-
-                    //we're going down a row                    
-                    //check if we need to bring a word with us
-                    if(DATA.newWord!=undefined) {
-
-
-                        EDIT.cut(DATA.newWord, lastColCell);
-                        if(DATA.clipboard.copy.length>0) {
-                            nextCell = EDIT.paste(nextCell);
-                            nextCell = FN.getCell(nextCell.data("row"),(nextCell.data("col")+1));
-                        }
-
-                        DATA.newWord = false;
-
-                    }
-                
-                }
-
-            } else if(o.arrow) {
-                if(dir=="up") {
-                    nextRow = (curData.row>marqueeData.pos.firstRow) ? (curData.row-1) : curData.row;
-                    nextCol = curData.col;    
-                } else if (dir=="down") {
-                    nextRow = (curData.row<marqueeData.pos.lastRow) ? (curData.row+1) : curData.row;
-                    nextCol = curData.col;   
-                } else if (dir=="left") {
-                    nextRow = curData.row;
-                    nextCol = (curData.col>(marqueeData.pos.firstCol+MARQUEE.toolOffset())) ? (curData.col-1) : curData.col;
-                } else if (dir=="right") {
-                    nextRow = curData.row;
-                    nextCol = (curData.col<(marqueeData.pos.lastCol)) ? (curData.col+1) : curData.col;
-                }
-                nextCell = FN.getCell(nextRow,nextCol);
-            }
-
-            if(o.delete) nextCell.find("span.t").remove();
-
-            EDIT.cursor.init(nextCell);
-
-
-        },
-
-
-
-        newLine: function(td) {
-            
-            ch = EDIT.textSpan("13", "special");
-            td.append(ch);
-
-            curData = EL.cursor.data("pos").data();
-            marqueeData = EL.curMarquee.data();
-
-            nextRow = (curData.row<marqueeData.pos.lastRow) ? (curData.row+1) : curData.row;
-            nextCol = MARQUEE.toolOffset() + EL.curMarquee.data().pos.firstCol;
-
-            nextCell = FN.getCell(nextRow,nextCol);
-
-            EDIT.cursor.init(nextCell);
-
-        }
-
-
-    },
-
-    cut: function(start,end) {
-
-        sPos = start.data();
-        ePos = end.data();
-
-        firstCol = sPos.col+1;
-        lastCol = ePos.col;
-        firstRow = sPos.row;
-        lastRow = ePos.row;
-
-        var $spans = [];
-
-        CANVAS.loop({
-            firstCol: firstCol,
-            lastCol: lastCol,
-            firstRow: firstRow,
-            lastRow: lastRow,
-
-            tdFunction: function(td) {
-                span = td.find("span.t");
-                $spans.push(span);
-                span.remove();
-            }
-
-        })
-
-        DATA.clipboard.copy = $($spans);
-
-    },
-
-    paste: function(cell) {
-
-        var col = cell.data().col;
-        var row = cell.data().row;
-
-        var clipPos = 0;
-
-        var td_;
-
-        if(DATA.clipboard.copy) {
-
-            CANVAS.loop({
-                
-                firstCol: col,
-                firstRow: row,
-                inclusive: true,
-                until: function() {
-                   return (clipPos>=DATA.clipboard.copy.length);
-                },
-                tdFunction: function(td) {
-                    t = DATA.clipboard.copy[clipPos];
-                    td.append(t);
-                    td_ = td;
-                    clipPos++;
-                }
-            });
-
-            return td_;
-        }
-    },
-
-    keys: {
-        
-        init: function() {
-
-            if($(document).data("events").keypress) return false;
-
-            $(document).keypress(function(e) {
-                key = (String.fromCharCode(e.charCode));
-                td = EL.cursor.data("pos");
-                td.find("span.t").remove();
-
-                if(e.charCode==32) {
-                    //space
-                    DATA.newWord= td;
-
-                }
-                if(e.charCode==13) {
-                    //return
-                    EDIT.cursor.newLine(td);
-                
-                } else if(DATA.chars.indexOf(key)>-1) {
-
-                    ch = EDIT.textSpan(key);
-                    td.append(ch); 
-                    EDIT.cursor.move({direction:"forward"});
-
-                }
-
-                return false;
-            });
-
-            $(document).jkey('backspace', function() {
-
-                
-                if($("div.marquee.edit").length>0) {
-
-                    EDIT.cursor.move({
-                        direction: "backward",
-                        delete: true
-                    })
-
-                }
-
-            }).jkey('up,down,left,right', function(e) {
-                EDIT.cursor.move({direction:e,arrow:true});
-            });
-
-
-        },
-
-        cancel: function() {
-
-            $(document).unbind("keypress");
-
-        }
-
-    },
-
-    textSpan: function(key, special) {
-
-        return $('<span class="t"/>').addClass(special ? "s": "").text(key);
-
-    }
-
 }
