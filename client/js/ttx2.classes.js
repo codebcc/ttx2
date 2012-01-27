@@ -167,4 +167,68 @@ var ccs = {
     }
 }
 
+var TOOLSETS = {
+
+    color: {
+
+        id: "color",
+
+        contents: {
+            BGColor: {
+                title: "Background Color",
+                id: "BGColor",
+                data: {
+                    background: "background",
+                },
+                buildFunction: function() {
+                    TOOLS.buildColors(this);
+                }
+            },
+            textColor: {
+                title: "Text Color",
+                id: "textColor",
+                data: {
+                    foreground: "foreground",
+                    text: "text",
+                },
+                buildFunction: function() {
+                    TOOLS.buildColors(this);
+                }
+            },
+            graphicsColor: {
+                title: "Graphics Color",
+                id: "graphicsColor",
+                data: {
+                    foreground: "foreground",
+                    graphics: "graphics",
+                },
+                buildFunction: function() {
+                    TOOLS.buildColors(this);
+                }
+            }
+        }
+    },
+    preview: {
+        id: "preview",
+        title: "Preview",
+        type: "checkbox",
+        changeFunction: function() {
+            EL.canvas.toggleClass("preview");             
+        }
+    },
+    drawing: {
+        id: "drawing",
+        title: "Drawing",
+        contents: {
+            pen: {
+                id: "pen",
+                title: "Pen",
+                changeFunction: function() {
+                    EDIT.drawing.init();
+                }
+            }
+        }
+    }
+}
+
 

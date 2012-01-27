@@ -1,14 +1,133 @@
 
 var TOOLS = {
 
+    _build: function() {
+        
+        for(i in TOOLSETS) {
+            
+            toolset = TOOLSETS[i];
+            if (toolset.contents) {
+
+                $("#tools").append(
+                    $('<div class="group"/>')
+                        .attr("id",toolset.id)
+                        .append(toolset.title ? $('<h2>' + toolset.title + '</h2>') : "")
+                );
+
+                wrapper = $("#tools #" + toolset.id);
+
+                for(j in toolset.contents) {
+                    TOOLS.buildToolset(toolset.contents[j], wrapper);
+                }
+
+            } else {
+                TOOLS.buildToolset(toolset);   
+            }
+        }
+    },
+
+    buildToolset: function(toolset,wrapper) {
+
+        if(!wrapper) wrapper = $("#tools");
+
+        wrapper.append(
+            $('<div class="toolset"/>')
+                .append(toolset.title ? '<h3>' + toolset.title + '</h3>' : "")
+                .data(toolset.data)
+         );
+
+         TOOLS.buildTool.init({
+             toolset: toolset,
+             wrapper: wrapper
+         });
+        
+    },
+
+    buildColors: function(t) {
+
+        var $ul = $("<ul/>");
+
+
+        for(i in COLORS) {
+            //add an LI with the class being the colors short name
+            
+            if(t.id.indexOf("text")>-1) {
+                ccPrefix = "t_";
+            } else if(t.id.indexOf("graphics")>-1) {
+                ccPrefix = "g_";
+            } else {
+                ccPrefix = "b_";
+            }
+
+
+            $li = $("<li>")
+                .data({
+                    color: COLORS[i].name.toLowerCase(),
+                    cc: ccPrefix + COLORS[i].sname
+                })
+                .addClass(COLORS[i].sname)
+
+
+            //add a link
+            $a = $('<a href="#">').click(function() {
+                TOOLS.toolClick($(this));
+                return false;
+            });
+
+            //build our full element
+            $ul.append($li.append($a));
+            
+        }
+
+        return $ul;
+        
+    },
+
+    buildTool: {
+
+        init: function(o) {
+
+            if(o.toolset.buildFunction) {
+
+                console.log(o.toolset.buildFunction());
+
+                o.wrapper.append(o.toolset.buildFunction());
+
+            } else {
+
+                tool = o.toolset.type ? o.toolset.type : "button";
+                TOOLS.buildTool[tool](o);
+
+            }
+            
+        },
+
+        button: function(o) {
+
+            o.wrapper.append(
+                $('<input type="button"/>')
+                    .change(function() {
+                        if(o.changeFunction) o.changeFunction;
+                    })
+                    .val(o.toolset.title)
+                    .attr("class",o.toolset.title)
+            )            
+
+        },
+
+        checkbox: function() {
+            
+        }
+        
+    },
     build: function() {
 
         toolset = $('<div class="toolset"><ul/></div>');
 
         //add title and IDs to container
         bgTools = toolset.clone().data("background","background").addClass("background").prepend('<h2>BG</h2>');
-        fgToolsG = toolset.clone().data({foreground: "foreground", graphics: "graphics"}).addClass("graphics foreground").prepend('<h2>FG graphics</h2>');
-        fgToolsT = toolset.clone().data({foreground: "foreground", text: "text"}).addClass("text foreground").prepend('<h2>FG text</h2>');
+        fgToolsG = toolset.clone().data({foreground: "foreground", graphics: "graphics"}).prepend('<h2>FG graphics</h2>');
+        fgToolsT = toolset.clone().data({foreground: "foreground", text: "text"}).prepend('<h2>FG text</h2>');
 
         //loop through all colors
         for(i in COLORS) {
@@ -36,9 +155,9 @@ var TOOLS = {
         for(i in $(fgToolsG).find("li")) {
             fgClass = fgToolsT.find("li").eq(i).attr("class");
             if(fgClass) {
-                $(fgToolsG).find("li").eq(i).attr({"class":fgClass, cc: "g_" + fgClass.toLowerCase()});
-                $(fgToolsT).find("li").eq(i).attr({"class":fgClass, cc: "t_" + fgClass.toLowerCase()});
-                $(bgTools).find("li").eq(i).attr({"class":fgClass, cc: "b_" + fgClass.toLowerCase()});
+                $(fgToolsG).find("li").eq(i).attr({"class":fgClass}).data("cc","g_" + fgClass.toLowerCase());
+                $(fgToolsT).find("li").eq(i).attr({"class":fgClass}).data("cc", "t_" + fgClass.toLowerCase());
+                $(bgTools).find("li").eq(i).attr({"class":fgClass}).data("cc", "b_" + fgClass.toLowerCase());
             }
         }
         //add the toolboxes to the tools area #tools
@@ -59,6 +178,14 @@ var TOOLS = {
             .append($('<span/>').text("Preview"));
         $("div.toolset:last-child").after(preview);
 
+        drawing = $('<div class="toolset" class="drawing" />')
+            .append('<h2>Drawing</h2>').end()
+            .append('<ul/>')
+                .append('<li/>')
+                    .append('<a href="#" id="pen">Pen</a>')
+                    .click(EDIT.drawing.init());
+        $("div.toolset:last-child").after(drawing);
+        
     },
     setTools: function(tools) {
 
@@ -87,6 +214,10 @@ var TOOLS = {
     },
     toolClick: function(t) {
 
+        if(!EL.curMarquee) {
+            FN.help("No marquee selected!");
+            return false;
+        }
         //what type of tool was clicked?
         
         toolset = t.parents("div.toolset");
@@ -117,6 +248,7 @@ var TOOLS = {
 
         MARQUEE.setTDClasses({marquee:true});
         MARQUEE.activate();
+        if(EL.curMarquee.data().charArr && (EL.curMarquee.data().charArr.length>0)) MARQUEE.editMode.drawText();
 
     }
 }
@@ -155,7 +287,10 @@ var CANVAS = {
                                 } else {
                                     EDIT.tdClick($(this));
                                 }
-                                EDIT.cursor.init(t);
+                                //EDIT.cursor.init(t);
+                            })
+                            .dblclick(function() {
+                                EDIT.tdDblClick($(this));
                             })
                     );
                 DATA.$cells["cell" + i + "_" + j] = EL.grid.find("#cell" + i + "_" + j);
@@ -195,7 +330,7 @@ var CANVAS = {
                     u = $(ui.unselecting);
                     MARQUEE.unMarkCollisions($(ui.unselecting), $("div.marquee"));
                 },
-                filter: "td",
+                filter: "td,tr",
                 cancel: "td.ui-selected, #canvas.edit td"
             });
 

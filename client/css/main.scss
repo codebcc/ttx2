@@ -62,7 +62,6 @@ $cblue: #00007f; //control color
 // **********
 
 body {
-    padding-top: 40px;
     position: relative;
 }
 
@@ -76,7 +75,10 @@ body {
 
 #tools {
     margin-top: 40px;
-    div.toolset {
+    a {
+        display:block;
+    }
+    div.toolset, div.group {
         float: left;
         margin-right: 10px;
         padding: 10px;
@@ -100,6 +102,9 @@ body {
                 }
             } 
         }
+    }
+    div.group {
+        width: auto;
     }
 }
 

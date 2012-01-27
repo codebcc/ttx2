@@ -3,6 +3,8 @@ var MARQUEE = {
 
     init: function() {
 
+        FN.help("");
+        
         DATA.marqueeCount++;
 
         MARQUEE.removeEmpties();
@@ -30,7 +32,7 @@ var MARQUEE = {
                         id         : DATA.marqueeCount,
                         editMode   : {
                         },
-                        text       : "",
+                        charArr     : [],
                         pos         : {
                             firstCol    : firstCol,
                             lastCol     : lastCol,
@@ -71,11 +73,10 @@ var MARQUEE = {
 
             EL.curMarquee.toggleClass("edit");
             $("#canvas").toggleClass("edit");
-
             EL.curToolbar = $("div#toolbar" + EL.curMarquee.data("id"));
             EL.curToolbar.show();
             DATA.editMode = true;
-            MARQUEE.editMode.setCursorPosition();
+            EDIT.cursor.placeAtLastChar();
             EL.curMarquee.removeClass("empty");
 
         },
@@ -87,7 +88,6 @@ var MARQUEE = {
             EDIT.cursor.remove();
             DATA.editMode = false;
             if(EL.curMarquee.find("span.t").length<1) EL.curMarquee.addClass("empty");
-            MARQUEE.editMode.storeTextData();
         },
 
         repositionToolbar: function() {
@@ -97,53 +97,22 @@ var MARQUEE = {
             })
         },
 
-        setCursorPosition: function() {
-            data = EL.curMarquee.data();
-            if(!data.editMode.cursorPos) {
-                td = CELL.getCell({row:data.pos.firstRow,col:MARQUEE.firstColOffset()});
-            }
-            if(DATA.editMode) {
-                EDIT.cursor.init(td);
-            } else {
-                return td;
-            }
-        },
-
-        storeTextData: function() {
-
-            if($("#grid td.ui-selected span.t").length==0) return false;
-
-            var text = "";
-
-            CANVAS.loop({
-                marquee: true,
-
-                tdFunction: function(td) {
-
-                    span = td.find("span.t");
-                    special = td.find("span.s");
-
-                    if(span.length>0) text += ((special.length>0) ? span.text() : span.text().charCodeAt()) + ";";
-
-                }
-            });
-
-            EL.curMarquee.data("text",text);
-        },
-
         drawText: function(o) {
 
             if(!o) o = {};
 
-            t = o.insert ? DATA.clipboard.insert : EL.curMarquee.data("text");
+            var chars = EL.curMarquee.data().charArr;
+            EL.curMarquee.data().charMap = {};
 
             if(!t) return false;
 
-            var chars = t.split(";");
-            chars.push("32"); //add a space to the end to help wrapping
-            var charPos = lineCount = rowFirstChar = 0;
+            $("#grid td.ui-selected span.t").remove();
+
+            var charPos = rowFirstChar = 0;
             var hold = false;
-            if(EL.cursor.data().pos) {
+            var curMarqueeData = EL.curMarquee.data().pos;
+
+            if(EL.cursor && EL.cursor.data().pos) {
                 var curData = EL.cursor.data().pos.data();
                 var nextCell = CELL.getCell({row:curData.row,col:(curData.col+1)});
                 var nextCellPos = CELL.getPos(nextCell);
@@ -152,12 +121,11 @@ var MARQUEE = {
             CANVAS.loop({
 
                 marquee: true,
-                firstCol: o.insert ? nextCellPos.col : MARQUEE.firstColOffset(),
-                firstRow: o.insert ? nextCellPos.row : EL.curMarquee.data().pos.firstRow,
-                inclusive: o.insert,
+                firstCol: MARQUEE.firstColOffset(),
+                firstRow: curMarqueeData.firstRow,
                     
                 trFunction: function(tr) {
-                    //check if this word will fit
+
                     if(hold) {
                         hold = false;
                         charPos++;
@@ -169,36 +137,70 @@ var MARQUEE = {
 
                 tdFunction: function(td) {
 
+                    tdData = td.data();
+
                     if(charPos<chars.length) {
+
                         if(chars[charPos]==13) { //newline
 
+                            if(!hold) {
+                                td.append(EDIT.textSpan(13, "special"));
+                                td.data().charPos = charPos;
+                                EL.curMarquee.data().charMap[charPos] = td;
+                            }
                             hold=true;
-                            td.append(EDIT.textSpan(13, "special"));
 
-                        } else if((chars[charPos]==32) || ((charPos==0) && o.insert)) { //space!
+                        } else if(chars[charPos]==32) { //space!
+
+                            if(!hold) {
+                                EL.curMarquee.data().charMap[charPos] = td;
+                                td.data().charPos = charPos;
+                            }
+
                             //dont start a line with a space
-                            if(td.data("col")==MARQUEE.firstColOffset()) charPos++;
+                            if(tdData.col==MARQUEE.firstColOffset()) charPos++;
 
                             //wrap words that are too long to fit on this line
-                            nextSpace = chars.indexOf("32",(charPos+1));
-                            if((td.data("col")+(nextSpace-charPos)-1)>EL.curMarquee.data().pos.lastCol) hold=true;
+                            nextSpace = chars.indexOf(32,(charPos+1));
+                            if(nextSpace==-1) nextSpace = chars.length;
+                            if((tdData.col+(nextSpace-charPos)-1)>curMarqueeData.lastCol) hold=true;
 
                         }
                         if(!hold) {
                             td.append(EDIT.textSpan(String.fromCharCode(chars[charPos])));
+                            EL.curMarquee.data().charMap[charPos] = td;
                             charPos++;
                         }
                     }
 
                 }
             });
-            if(o.insert) EDIT.cursor.init(EL.cursor.data().pos);
 
         },
 
         removeText: function(tds) {
             tds = (!tds) ? $("#grid td.ui-selected") : tds;
             tds.find("span.t").remove();
+        },
+
+        lastTextCell: function() {
+            ltc = $("#grid td.ui-selected:has(span.t):last");
+            if(ltc.length==0) ltc = MARQUEE.editMode.firstCell();
+            return ltc;
+        },
+
+        lastTextCellOnRow: function(row) {
+            ltc = $("#grid #row" + row + " td.ui-selected:has(span.t):last");
+            ltcPos = CELL.getPos(ltc);
+            ltc = CELL.getCell({row:ltcPos.row,col:(ltcPos.col+1)})
+            return ltc; 
+        },
+
+        firstCell: function() {
+
+            boundary = EDIT.getEditableArea();
+            return CELL.getCell({row:boundary.firstRow,col:boundary.firstCol});
+
         }
 
     },
@@ -463,24 +465,12 @@ var MARQUEE = {
         }
     },
     toolOffset: function() {
-        cmd = EL.curMarquee.data();
-        if(!cmd) return 0;
-        return (cmd.tools) ? cmd.tools.length : 0;
+        row = EL.curMarquee.data().pos.firstRow;
+        return $("#grid tr#row" + row + " td.cc").length;
     },
     firstColOffset: function() {
-        if(!EL.curMarquee.data()) return false;
-        return (MARQUEE.toolOffset() + EL.curMarquee.data().pos.firstCol);
-    },
-    getEditableArea: function(o) {
-
-        if(!o) o = {};
-        cmData = (EL.curMarquee && !o.ignoreMarquee) ? EL.curMarquee.data().pos : undefined;
-
-        return {
-            firstCol: cmData ? (o.fullMarquee ? cmData.firstCol: MARQUEE.firstColOffset()) : 1,
-            lastCol: cmData ? cmData.lastCol : DATA.cols,
-            firstRow: cmData ? cmData.firstRow : 1,
-            lastRow: cmData ? cmData.lastRow : DATA.rows
-       }
+        cmd = EL.curMarquee.data();
+        if(!cmd) return false;
+        return (MARQUEE.toolOffset() + cmd.pos.firstCol);
     }
 }

@@ -34,7 +34,7 @@ var CC = {
                 text:           toolset.data("text"),
                 graphics:       toolset.data("graphics"),
                 color:          t.data("color") ? COLORS[t.data("color")] : false,
-                cc:             ccs[t.attr("cc")]
+                cc:             ccs[t.data("cc")]
             }
 
 
@@ -73,6 +73,7 @@ var CC = {
 
         DATA.tools = tools;
 
+
         //check marquee is big enough to hold the CCs
         ccLen = DATA.ccArr.length;
         if(FN.getCSSInt("width",EL.curMarquee) < (ccLen*DATA.blockX)) {
@@ -99,7 +100,7 @@ var CC = {
     },
     checkLeftEdge: function() {
         //is our selection touching the left edge?
-        return ($("#grid td#cell1_1.ui-selected").length>0);
+        return ($("#grid td.ui-selected:first").data().col==1);
     },
     addToGrid: function() {
 

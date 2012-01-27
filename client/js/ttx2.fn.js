@@ -6,9 +6,10 @@ var CELL = {
             col: cell.data("col")
         }   
     },
+
     getCell: function(o) {
 
-        if(!o.noBoundary) boundary = MARQUEE.getEditableArea(o);
+        if(!o.noBoundary) boundary = EDIT.getEditableArea(o);
 
         row = o.row;
         col = o.col;
@@ -95,5 +96,36 @@ var FN = {
             words += String.fromCharCode(letters[i]);
         }
         return words;
+    },
+    charArrToWords: function() {
+        words = "";
+        charArr = EL.curMarquee.data().charArr;
+        for(i in charArr) {
+            words += String.fromCharCode(charArr[i]);
+        }
+        return words;
     }
+}
+
+if (!Array.prototype.indexOf)
+{
+  Array.prototype.indexOf = function(elt /*, from*/)
+  {
+    var len = this.length >>> 0;
+
+    var from = Number(arguments[1]) || 0;
+    from = (from < 0)
+         ? Math.ceil(from)
+         : Math.floor(from);
+    if (from < 0)
+      from += len;
+
+    for (; from < len; from++)
+    {
+      if (from in this &&
+          this[from] === elt)
+        return from;
+    }
+    return -1;
+  };
 }

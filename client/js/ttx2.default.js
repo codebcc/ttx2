@@ -21,6 +21,13 @@ var DATA = {
     $cells: {},
     $rows: {},
     ccAttrs: ["background","color","foreground","text","graphics","new"],
+    movement: {
+        up:     [-1, 0],
+        down:   [ 1, 0],
+        left:   [ 0,-1],
+        right:  [ 0, 1]
+    },
+    insertOffset: 0,
     FN: {
         getPostLoadData: function() {
             DATA = $.extend(DATA, {

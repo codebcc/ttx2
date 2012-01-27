@@ -2,16 +2,18 @@ var EDIT = {
 
     tdClick: function(t) {
         
-        curData = EL.curMarquee.data("pos");
-        //set new word to last space if one exists
-        $spans = $("#grid #row" + t.data("row") + " td:lt(" + t.data("col") + "):gt(" + curData.firstCol + ") span.t");
-        $spans.each(function() {
-            t = $(this);
-            if(t.text()==" ") DATA.newWord = ($spans.index(t));
-        })
-        DATA.newWord = false;
+        //only place the cursor on text cells
+        if(t.find("span.t").length==0) {
+            return false;
+        } else {
+            EDIT.cursor.init(t);
+        }
 
     }, 
+        
+    tdDblClick: function(t) {
+        MARQUEE.editMode.cancel();
+    },
 
     cursor: {
 
@@ -24,23 +26,74 @@ var EDIT = {
             EDIT.keys.init();
 
             //determine if we need inset mode EG cursor is in the middle of text
-            DATA.lastTextCell = $("#grid td.ui-selected:has(span.t):last");
-            ltcPos = CELL.getPos(DATA.lastTextCell);
-            cPos = CELL.getPos(EL.cursor.parent());
-            insertMode = false;
+            mData = EDIT.getEditableArea();
+            cPos = CELL.getPos();
+            ltcPos = CELL.getPos(MARQUEE.editMode.lastTextCell());
 
-            if(DATA.clipboard.insert) if(DATA.clipboard.insert.length>0) {
-                DATA.insertMode = true;
-                insertMode = true;
-            }
-            if(!insertMode) DATA.insertMode = (cPos.row<ltcPos.row) ? true : (cPos.row==ltcPos.row) ? ((cPos.col<=ltcPos.col) ? true : false) : false;
+            /* DATA.insertMode = (cPos.row<ltcPos.row) ? true : (cPos.row==ltcPos.row) ? ((cPos.col<ltcPos.col) ? true : false) : false;
+            charPos = EL.cursor.data().pos.data().charPos;
+            DATA.insertHold ==false;
+
+            if(DATA.insertMode && charPos && !DATA.insertHold) {
+                DATA.insertOffset = (EL.curMarquee.data().charArr.length-charPos);
+            } else if (DATA.insertMode && DATA.insertHold) {
+
+            } else {
+                DATA.insertOffset = 0;
+            } 
+
+            DATA.insertHold = DATA.insertMode; */
+
+
 
         },
 
+        goBackBy: function(places) {
 
+            $cellsWithText = $("#grid td.ui-selected:has(span.t)");
+            var $cell;
+
+            $cellsWithText.get().reverse().each(function(i) {
+                
+                if(i==(places-1)) $cell = $(this);
+
+            });
+
+            EDIT.cursor.init($cell);
+
+            
+            /* for(i=1;i<=(places-1);i++) {
+
+                cPos = CELL.getPos();
+                nextCell = CELL.getCell({row:ltcPos.row,col:(ltcPos.col-1)});
+                //no text in this cell? go to last cell that has text
+                if(nextCell.find("span.t").length==0) nextCell = MARQUEE.editMode.lastTextCellOnRow(nextCell.data().row);
+                EDIT.cursor.init(nextCell);
+
+            } */
+        },
 
         remove: function() {
             $("#cursor").remove();
+        },
+
+        placeAtLastChar: function() {
+
+            EDIT.cursor.init(MARQUEE.editMode.lastTextCell());
+
+        },
+
+        placeAfterLastChar: function() {
+            
+            ltcPos = CELL.getPos(MARQUEE.editMode.lastTextCell());
+            EDIT.cursor.init(CELL.getCell({row:ltcPos.row,col:(ltcPos.col+1)}));
+        },
+
+        insertPlace: function() {
+
+            EDIT.cursor.placeAfterLastChar();
+            EDIT.cursor.goBackBy(EL.curMarquee.data().charArr.length-DATA.insertOffset);
+            
         },
 
         move: function(o) {
@@ -48,173 +101,53 @@ var EDIT = {
             dir = o.direction;
 
             curData = CELL.getPos();
-            lastColCell = CELL.getCell({row:curData.row,col:lastCol,noBoundary:true});                
-            boundary = MARQUEE.getEditableArea();
 
-            if(DATA.insertMode && !o.arrow) {
-                EDIT.cut({
-                    start: EL.cursor.parent(),
-                    end: DATA.lastTextCell,
-                    clipboard: "insert",
-                    data: true
-                });
+            if(o.delete) {
+                EDIT.charArr.pop();
             }
 
-            if(dir=="backward") {
+            if(dir=="forward") {
                 
-                nextCell = CELL.getCell({row:curData.row,col:(curData.col-1)});
-                if(o.delete) {
-                    ltc = CELL.lastTextCellOnRow(nextCell.data().row);
-                    nextCell = CELL.getCell({row:nextCell.data().row,col:((ltc.length>0) ? ltc.data().col : boundary.firstCol)});
-                }
-
-
-            } else if(dir=="forward") {
-
                 nextCell = CELL.getCell({row:curData.row,col:(curData.col+1)});
+                    
+            } else if (dir=="backward") {
 
-                if(nextCell.data().row>curData.row) {
-
-                    //we're going down a row                    
-                    //check if we need to bring a word with us
-                    if(DATA.newWord!=undefined) {
-
-
-                        EDIT.cut({
-                            start: DATA.newWord,
-                            end: lastColCell
-                        });
-
-                        if(DATA.clipboard.copy.length>0) {
-                            nextCell = EDIT.paste({cell: nextCell});
-                            nextCell = CELL.getCell({row:nextCell.data("row"),col:(nextCell.data("col")+1)});
-                        }
-
-                        DATA.newWord = false;
-
-                    }
+                nextCell = CELL.getCell({row:curData.row,col:(curData.col-1)});    
                 
-                }
-
-            } else if(o.arrow) {
-                if(dir=="up") {
-                    nextCell = CELL.getCell({row:(curData.row-1),col:curData.col});
-                } else if (dir=="down") {
-                    nextCell = CELL.getCell({row:(curData.row+1),col:curData.col});
-                } else if (dir=="left") {
-                    nextCell = CELL.getCell({row:curData.row,col:(curData.col-1)});
-                } else if (dir=="right") {
-                    nextCell = CELL.getCell({row:curData.row,col:(curData.col+1)});
-                }
             }
 
-            if(o.delete) nextCell.find("span.t").remove();
+            /* if(o.arrow) {
+
+                if(dir=="up") {
+                    nextCell = CELL.getCell({row:(curData.row-1),col:curData.col,textOnly:true});
+                } else if (dir=="down") {
+                    nextCell = CELL.getCell({row:(curData.row+1),col:curData.col,textOnly:true});
+                } else if (dir=="left") {
+                    nextCell = CELL.getCell({row:curData.row,col:(curData.col-1),textOnly:true});
+                } else if (dir=="right") {
+                    nextCell = CELL.getCell({row:curData.row,col:(curData.col+1),textOnly:true});
+                }
+
+            } */
+
             EDIT.cursor.init(nextCell);
-            if(DATA.insertMode) MARQUEE.editMode.drawText({insert:true});
+                
 
         },
 
-
-
         newLine: function(td) {
             
-            ch = EDIT.textSpan("13", "special");
-            td.append(ch);
+            EDIT.charArr.push({char:13,redraw:false});
 
             curData = EL.cursor.data("pos").data();
-            marqueeData = EL.curMarquee.data();
 
-            nextRow = (curData.row<marqueeData.pos.lastRow) ? (curData.row+1) : curData.row;
-            nextCol = MARQUEE.toolOffset() + EL.curMarquee.data().pos.firstCol;
-
-            nextCell = CELL.getCell({row:nextRow,col:nextCol});
+            nextCell = CELL.getCell({row:(curData.row+1),col:MARQUEE.firstColOffset()});
 
             EDIT.cursor.init(nextCell);
 
         }
 
 
-    },
-
-    cut: function(o) {
-
-        sPos = o.start.data();
-        ePos = o.end.data();
-
-        clipboard = o.clipboard ? o.clipboard : "copy";
-        DATA.clipboard[clipboard] = [];
-
-        firstCol = sPos.col+1;
-        lastCol = ePos.col;
-        firstRow = sPos.row;
-        lastRow = ePos.row;
-
-
-        var $spans = [];
-        var data = "";
-
-        CANVAS.loop({
-
-            firstCol: firstCol,
-            lastCol: lastCol,
-            firstRow: firstRow,
-            lastRow: lastRow,
-            inclusive: true,
-
-            tdFunction: function(td) {
-                span = td.find("span.t");
-                if((span.length>0) && (span.text().charCodeAt()!=0)) {
-                    $spans.push(span);
-                    data+=span.text().charCodeAt() + ";";
-                    span.remove();
-                }
-            }
-
-        })
-
-        DATA.clipboard[clipboard] = o.data ? data : $($spans);
-
-    },
-
-    paste: function(o) {
-
-        cell = o.cell ? o.cell : EL.cursor.parent();
-        clipboard = o.clipboard ? o.clipboard : "copy";
-
-        var col = cell.data().col;
-        var row = cell.data().row;
-
-        var clipPos = 0;
-
-        var td_;
-        var hold = false;
-
-        if(DATA.clipboard[clipboard]) {
-
-            CANVAS.loop({
-                
-                firstCol: col,
-                firstRow: row,
-                inclusive: true,
-                until: function() {
-                   return (clipPos>=DATA.clipboard[clipboard].length);
-                },
-                trFunction: function(tr) {
-                    if(hold) {
-                        hold = false;
-                        clipPos++;
-                    }
-                },
-                tdFunction: function(td) {
-                    t = DATA.clipboard[clipboard][clipPos];
-                    td.append(t);
-                    td_ = td;
-                    clipPos++;
-                }
-            });
-
-            return td_;
-        }
     },
 
     keys: {
@@ -223,25 +156,11 @@ var EDIT = {
 
             if($(document).data("events").keypress) return false;
 
-            $(document).keypress(function(e) {
-                key = (String.fromCharCode(e.charCode));
-                td = EL.cursor.data("pos");
-                td.find("span.t").remove();
+            $(document).keypress(function(e) { 
 
-                if(e.charCode==32) {
-                    //space
-                    DATA.newWord= td;
+                if((DATA.chars.indexOf(String.fromCharCode(e.charCode))>-1) || (e.charCode==13)) {
 
-                }
-                if(e.charCode==13) {
-                    //return
-                    EDIT.cursor.newLine(td);
-                
-                } else if(DATA.chars.indexOf(key)>-1) {
-
-                    ch = EDIT.textSpan(key);
-                    td.append(ch); 
-                    EDIT.cursor.move({direction:"forward"});
+                    EDIT.addChar(e.charCode);
 
                 }
 
@@ -279,6 +198,83 @@ var EDIT = {
 
         return $('<span class="t"/>').addClass(special ? "s": "").text(key);
 
+    },
+
+    addChar: function(char) {
+        
+        redraw = (char!=13);
+        EDIT.charArr.push({char:char,redraw:redraw});
+
+        if(char==13) {
+
+            curData = EL.cursor.data("pos").data();
+            nextCell = CELL.getCell({row:(curData.row+1),col:(MARQUEE.firstColOffset()-DATA.insertOffset)});
+            EDIT.cursor.init(nextCell);
+
+        } else {
+
+            if(DATA.insertMode) {
+
+                EDIT.cursor.move({direction:"forward"})
+
+            } else {
+
+                EDIT.cursor.placeAfterLastChar();
+
+            }
+            
+
+        }
+
+    },
+
+    getEditableArea: function(o) {
+
+        if(!o) o = {};
+        cmData = (EL.curMarquee && !o.ignoreMarquee) ? EL.curMarquee.data().pos : undefined;
+
+        return {
+            firstCol: cmData ? (o.fullMarquee ? cmData.firstCol: MARQUEE.firstColOffset()) : 1,
+            lastCol: cmData ? cmData.lastCol : DATA.cols,
+            firstRow: cmData ? cmData.firstRow : 1,
+            lastRow: cmData ? cmData.lastRow : DATA.rows
+       }
+    },
+
+    charArr: {
+
+        push: function(o) {
+
+            charArr = EL.curMarquee.data().charArr;     
+            if(DATA.insertMode) {
+                io = (charArr.length-DATA.insertOffset);
+                console.log(io,charArr.length,DATA.insertOffset);
+                sliceArr = charArr.slice(0,io);
+                sliceArr.push(o.char);
+                sliceArr1 = charArr.slice(io,charArr.length);
+                EL.curMarquee.data().charArr = sliceArr.concat(sliceArr1);
+                console.log(FN.charArrToWords());
+            } else {
+                charArr.push(o.char);
+            }
+
+            if(o.redraw!=false) MARQUEE.editMode.drawText();
+
+        },
+
+        pop: function() {
+            
+            EL.curMarquee.data().charArr.pop();
+            MARQUEE.editMode.drawText();
+        },
+    },
+
+    drawing: {
+        
+        init: function() {
+            
+        }
     }
+
 
 }
