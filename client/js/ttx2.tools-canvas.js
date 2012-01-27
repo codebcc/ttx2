@@ -1,7 +1,7 @@
 
 var TOOLS = {
 
-    _build: function() {
+    build: function() {
         
         for(i in TOOLSETS) {
             
@@ -120,7 +120,7 @@ var TOOLS = {
         }
         
     },
-    build: function() {
+    _build: function() {
 
         toolset = $('<div class="toolset"><ul/></div>');
 
