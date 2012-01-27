@@ -72,6 +72,7 @@ var CC = {
         }
 
         DATA.tools = tools;
+        EL.curMarquee.data().tools = tools;
 
 
         //check marquee is big enough to hold the CCs

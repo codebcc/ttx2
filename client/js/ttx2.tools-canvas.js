@@ -126,8 +126,8 @@ var TOOLS = {
 
         //add title and IDs to container
         bgTools = toolset.clone().data("background","background").addClass("background").prepend('<h2>BG</h2>');
-        fgToolsG = toolset.clone().data({foreground: "foreground", graphics: "graphics"}).prepend('<h2>FG graphics</h2>');
-        fgToolsT = toolset.clone().data({foreground: "foreground", text: "text"}).prepend('<h2>FG text</h2>');
+        fgToolsG = toolset.clone().data({foreground: "foreground", graphics: "graphics"}).addClass("foreground").prepend('<h2>FG graphics</h2>');
+        fgToolsT = toolset.clone().data({foreground: "foreground", text: "text"}).addClass("foreground").prepend('<h2>FG text</h2>');
 
         //loop through all colors
         for(i in COLORS) {
@@ -244,7 +244,8 @@ var TOOLS = {
         //add control characters to the grid
         if(tdSelected.length>0) CC.init();
 
-        EL.curMarquee.data('tools',DATA.tools);
+        //EL.curMarquee.data('tools',DATA.tools);
+        
 
         MARQUEE.setTDClasses({marquee:true});
         MARQUEE.activate();
